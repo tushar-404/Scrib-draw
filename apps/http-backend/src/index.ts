@@ -2,9 +2,8 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import { SigninSchema, SignupSchema } from "./auth.schema";
 import cookieParser from "cookie-parser";
-import "dotenv/config";
 import { authMiddleware } from "./middleware";
-
+import {JWT_SECRET} from "@repo/backend-common/config"
 /**
 db is not connected yet
 no auth check is happening 
@@ -20,7 +19,7 @@ app.post("/auth/signup", (req, res) => {
   try {
     const user = SignupSchema.parse(data);
     const payload = { username: user.username, email: user.email };
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, {
+    const token = jwt.sign(payload, JWT_SECRET, {
       expiresIn: "1h",
     });
     res.cookie("token", token, {
@@ -39,7 +38,7 @@ app.post("/auth/signin", (req, res) => {
   const data = SigninSchema.parse(req.body);
   // adding security check later
   const payload = { username: data.username };
-  const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "2d" });
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "2d" });
 
   res.cookie("token", token, {
     httpOnly: false,
