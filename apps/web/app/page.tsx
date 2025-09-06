@@ -1,10 +1,9 @@
 "use client";
-import { Tldraw } from "tldraw";
-import 'tldraw/tldraw.css'
+import dynamic from "next/dynamic";
+import React from "react";
+
+const Canvas = dynamic(() => import("./components/Canvas/Canvas"), { ssr: false });
+
 export default function Home() {
-  return (
-    <div style={{ position: "fixed", inset: 0 }}>
-      <Tldraw />
-    </div>
-  );
+  return <Canvas />;
 }
