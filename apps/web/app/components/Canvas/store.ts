@@ -2,7 +2,7 @@ import { atom } from "jotai";
 import { KonvaEventObject } from "konva/lib/Node";
 
 //types
-type Tool = "pen" | "eraser";
+type Tool = 'pan' | 'diamond' | 'arrow' | 'straightline' |  'draw'| 'text'| 'eraser' 
 type Line = {
   tool: Tool;
   points: number[];

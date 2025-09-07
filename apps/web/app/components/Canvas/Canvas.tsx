@@ -3,15 +3,22 @@ import { Layer, Stage, Line } from "react-konva";
 import Island from "./Island";
 import { useAtom } from "jotai";
 import { useRef } from "react";
-import { draggableAtom, drawingAtom, KonvaMouseEvent, linesAtom, toolAtom } from "./store";
+import {
+  draggableAtom,
+  drawingAtom,
+  KonvaMouseEvent,
+  linesAtom,
+  toolAtom,
+} from "./store";
+import HandleDraw from "./Tools/HandleDraw";
 
 export default function StageComponent() {
   const [tool] = useAtom(toolAtom);
   const [lines, setLines] = useAtom(linesAtom);
-  const [drawing,setDrawing] = useAtom(drawingAtom);
-  const [Draggable]=useAtom(draggableAtom);
+  const [drawing, setDrawing] = useAtom(drawingAtom);
+  const [Draggable] = useAtom(draggableAtom);
   const handleMouseDown = (e: KonvaMouseEvent) => {
-    setDrawing (true);
+    setDrawing(true);
     const pos = e.target.getStage().getPointerPosition();
     setLines([...lines, { tool, points: [pos.x, pos.y] }]);
   };
@@ -25,7 +32,7 @@ export default function StageComponent() {
     setLines(lines.concat());
   };
   const handleMouseUp = () => {
-    setDrawing(false)
+    setDrawing(false);
   };
   return (
     <div>
@@ -35,25 +42,10 @@ export default function StageComponent() {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        draggable={Draggable}
       >
         <Layer
-
         >
-          {lines.map((line, i) => (
-            <Line
-              key={i}
-              points={line.points}
-              stroke="#000000"
-              strokeWidth={5}
-              tension={0.5}
-              lineCap="round"
-              lineJoin="round"
-              globalCompositeOperation={
-                line.tool === "eraser" ? "destination-out" : "source-over"
-              }
-            />
-          ))}
+          <HandleDraw/>
         </Layer>
       </Stage>
     </div>
