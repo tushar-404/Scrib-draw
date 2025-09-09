@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { Tool, toolAtom } from "./store";
+import { actionsAtom, Tool, toolAtom } from "./store";
 import {
   Eraser,
   Pen,
@@ -18,6 +18,7 @@ import {
 
 export default function Island() {
   const [tool, setTool] = useAtom(toolAtom);
+  const [, setActions] = useAtom(actionsAtom);
   const toolArray = [
     { icon: SquareDashedMousePointer, type: "select" },
     { icon: Hand, type: "pan" },
@@ -29,7 +30,9 @@ export default function Island() {
     { icon: Eraser, type: "eraser" },
   ];
 
-  function undo() {}
+  function undo() {
+    setActions((prev) => prev.slice(0, -1));
+  }
   function redo() {}
 
   return (
@@ -38,8 +41,8 @@ export default function Island() {
         {toolArray.map(({ icon: Icon, type }) => (
           <div
             key={type}
-            title={type} // <-- this shows the name on hover
-            onClick={()=>(setTool(type as Tool))}
+            title={type}
+            onClick={() => setTool(type as Tool)}
             className={`cursor-pointer rounded-md p-2 border-[1px] border-transparent active:border-[#000000] ${
               tool === type ? "bg-[#E0DFFF]" : "hover:bg-zinc-100 text-zinc-600"
             }`}
@@ -48,17 +51,20 @@ export default function Island() {
           </div>
         ))}
       </div>
-<div className="fixed bottom-4 mx-10 flex w-max gap-1 justify-center p-[2px] bg-white rounded-lg shadow">
-    {[{ icon: Undo2, action: undo }, { icon: Redo2, action: redo }].map(({ icon: Icon, action }, i) => (
-      <div
-        key={i}
-        onClick={action}
-        className="cursor-pointer rounded-md p-2 border-[1px] border-transparent active:border-black hover:bg-zinc-100 text-zinc-600"
-      >
-        <Icon className="w-[10px] h-[10px]" />
+      <div className="fixed bottom-4 mx-10 flex w-max gap-1 justify-center p-[2px] bg-white rounded-lg shadow">
+        {[
+          { icon: Undo2, action: undo },
+          { icon: Redo2, action: redo },
+        ].map(({ icon: Icon, action }, i) => (
+          <div
+            key={i}
+            onClick={action}
+            className="cursor-pointer rounded-md p-2 border-[1px] border-transparent active:border-black hover:bg-zinc-100 text-zinc-600"
+          >
+            <Icon className="w-[10px] h-[10px]" />
+          </div>
+        ))}
       </div>
-    ))}
-  </div>
     </>
   );
 }
