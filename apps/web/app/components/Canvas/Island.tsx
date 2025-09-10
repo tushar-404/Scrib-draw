@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { actionsAtom, Tool, toolAtom } from "./store";
+import { actionsAtom, redoAtom, Tool, toolAtom } from "./store";
 import {
   Eraser,
   Pen,
@@ -29,15 +29,30 @@ export default function Island() {
     { icon: Type, type: "text" },
     { icon: Eraser, type: "eraser" },
   ];
+  const [, setRedoActions] = useAtom(redoAtom);
 
   function undo() {
-    setActions((prev) => prev.slice(0, -1));
-  }
-  function redo() {}
+    setActions((prev) => {
+      const last = prev.at(-1);
+      if (!last) return prev;
 
+      setRedoActions((r) => [...r, last]);
+      return prev.slice(0, -1);
+    });
+  }
+
+  function redo() {
+    setRedoActions((prev) => {
+      const last = prev.at(-1);
+      if (!last) return prev;
+
+      setActions((a) => [...a, last]);
+      return prev.slice(0, -1);
+    });
+  }
   return (
     <>
-      <div className="flex w-max gap-1 items-center justify-center mx-auto mt-4 p-[2px] bg-white rounded-lg shadow">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 flex w-max gap-1 justify-center p-[2px] bg-white rounded-lg shadow">
         {toolArray.map(({ icon: Icon, type }) => (
           <div
             key={type}

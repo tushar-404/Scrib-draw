@@ -2,6 +2,7 @@ import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
 import { Action } from "../store";
 
+
 export default function HandleDraw(
   stage: Konva.Stage,
   setActions: Dispatch<SetStateAction<Action[]>>
@@ -13,7 +14,7 @@ export default function HandleDraw(
     isDrawing.current = true;
     const pos = stage.getPointerPosition();
     if (!pos) return;
-
+    
     lastLinePoints.current = [pos.x, pos.y];
 
     setActions((prev: Action[]) => [

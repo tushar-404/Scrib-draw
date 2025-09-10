@@ -16,15 +16,15 @@ export interface TextAction {
   fontSize?: number;
   fill?: string;
 }
-
 export type Action = DrawAction| TextAction;
-
 export const actionsAtom=atom<Action[]>([]);
+export  const redoAtom = atom<Action[]>([]);
 
 
-
+export const StageSizeAtom = atom({ width: 0, height: 0 });
 export type KonvaMouseEvent = KonvaEventObject<MouseEvent>;
-
+export type KonvaWheelEvent= KonvaEventObject<WheelEvent>
+export type KonvaTouchEvent = KonvaEventObject<TouchEvent>; // add this
 
 
 
