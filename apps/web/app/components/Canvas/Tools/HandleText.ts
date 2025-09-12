@@ -8,7 +8,7 @@ export default function HandleText(
   setActions: Dispatch<SetStateAction<Action[]>>,
 ) {
   const handleClick = () => {
-    const pos = stage.getPointerPosition();
+    const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
     const newText: TextAction = {

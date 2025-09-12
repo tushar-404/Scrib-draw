@@ -13,6 +13,7 @@ import {
   SquareDashedMousePointer,
   Undo2,
   Redo2,
+  Square,
 } from "lucide-react";
 //type Tool = 'select'||'pan' | 'diamond' | 'arrow' | 'straightline' |  'draw'| 'text'| 'eraser'
 
@@ -22,7 +23,7 @@ export default function Island() {
   const toolArray = [
     { icon: SquareDashedMousePointer, type: "select" },
     { icon: Hand, type: "pan" },
-    { icon: Diamond, type: "diamond" },
+    { icon: Square, type: "Square" },
     { icon: MoveRight, type: "arrow" },
     { icon: Minus, type: "straightline" },
     { icon: Pen, type: "draw" },

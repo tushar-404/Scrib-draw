@@ -12,7 +12,6 @@ import {
 import Konva from "konva";
 import { SetStateAction } from "jotai";
 import HandleText from "./Tools/HandleText";
-import HandlePan from "./Tools/HandlePan";
 
 export default function StageComponent() {
   const [actions] = useAtom(actionsAtom);
@@ -45,25 +44,56 @@ export default function StageComponent() {
 
   useEffect(() => {
     if (!stageRef.current) return;
-
-    // always clean previous listeners first
     let cleanup: (() => void) | undefined;
 
     if (tool === "draw") {
       cleanup = HandleDraw(stageRef.current, stableSetActions);
     } else if (tool === "text") {
       cleanup = HandleText(stageRef.current, stableSetActions);
-    } else if (tool === "pan") {
-      cleanup = HandlePan(stageRef.current);
     }
-
     return () => {
-      if (cleanup) cleanup(); // <- ensure last tool's listeners get removed
+      if (cleanup) cleanup();
     };
   }, [tool, stableSetActions]);
+
+
+const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+  if (!e.evt.ctrlKey) return;
+  e.evt.preventDefault();
+
+  const stage = stageRef.current;
+  if (!stage) return;
+
+  const oldScale = stage.scaleX();
+  const pointer = stage.getPointerPosition();
+  if (!pointer) return;
+
+  const mousePointTo = {
+    x: (pointer.x - stage.x()) / oldScale,
+    y: (pointer.y - stage.y()) / oldScale,
+  };
+
+  const scaleBy = 1.08;
+  const direction = e.evt.deltaY > 0 ? -1 : 1;
+  const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+  stage.scale({ x: newScale, y: newScale });
+
+  const newPos = {
+    x: pointer.x - mousePointTo.x * newScale,
+    y: pointer.y - mousePointTo.y * newScale,
+  };
+  stage.position(newPos);
+};
   return (
     <div ref={containerRef} style={{ width: "100vw", height: "100vh" }}>
-      <Stage width={stageSize.width} height={stageSize.height} ref={stageRef}>
+      <Stage
+        width={stageSize.width}
+        height={stageSize.height}
+        onWheel={handleWheel}
+        ref={stageRef}
+        draggable={tool === "pan"}
+      >
         <Layer>
           {actions.map((action, i) => {
             if (action.tool === "draw" || action.tool === "straightline") {

@@ -12,7 +12,7 @@ export default function HandleDraw(
 
   const handleMouseDown = () => {
     isDrawing.current = true;
-    const pos = stage.getPointerPosition();
+    const pos = stage.getRelativePointerPosition();
     if (!pos) return;
     
     lastLinePoints.current = [pos.x, pos.y];
@@ -25,7 +25,7 @@ export default function HandleDraw(
 
   const handleMouseMove = () => {
     if (!isDrawing.current) return;
-    const pos = stage.getPointerPosition();
+    const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
     setActions((prev: Action[]) => {
