@@ -1,5 +1,6 @@
 import { atom } from "jotai";
 import { KonvaEventObject } from "konva/lib/Node";
+import { IColor } from "react-color-palette";
 
 export type Tool =
   | "select"
@@ -15,6 +16,8 @@ export const toolAtom = atom<Tool>("draw");
 export interface DrawAction {
   tool: Tool;
   points: number[];
+  stroke: string;
+  strokeWidth?: number;
 }
 export interface TextAction {
   tool: "text";
@@ -36,3 +39,10 @@ export type KonvaTouchEvent = KonvaEventObject<TouchEvent>;
 
 
 
+export type Width = 2 | 4 | 6 | 8 ;
+
+export const ColorAtom = atom<IColor>({
+  hex: "#561ecb",
+  rgb: { r: 86, g: 30, b: 203 },
+  hsv: { h: 263, s: 85, v: 80 },
+});

@@ -8,6 +8,7 @@ import {
   toolAtom,
   Action,
   StageSizeAtom,
+  ColorAtom,
 } from "./store";
 import Konva from "konva";
 import { SetStateAction } from "jotai";
@@ -20,6 +21,7 @@ export default function StageComponent() {
   const stageRef = useRef<Konva.Stage | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useAtom(StageSizeAtom);
+  const [colors] =useAtom(ColorAtom);
 
   useEffect(() => {
     const updateSize = () => {
@@ -47,14 +49,14 @@ export default function StageComponent() {
     let cleanup: (() => void) | undefined;
 
     if (tool === "draw") {
-      cleanup = HandleDraw(stageRef.current, stableSetActions);
+      cleanup = HandleDraw(stageRef.current, stableSetActions,colors);
     } else if (tool === "text") {
       cleanup = HandleText(stageRef.current, stableSetActions);
     }
     return () => {
       if (cleanup) cleanup();
     };
-  }, [tool, stableSetActions]);
+  }, [tool, stableSetActions,colors]);
 
 
 const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
@@ -96,12 +98,12 @@ const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
       >
         <Layer>
           {actions.map((action, i) => {
-            if (action.tool === "draw" || action.tool === "straightline") {
+            if (action.tool === "draw" ) {
               return (
                 <Line
                   key={i}
                   points={action.points}
-                  stroke="black"
+                  stroke={action.stroke}
                   strokeWidth={2}
                   tension={0.5}
                   lineCap="round"

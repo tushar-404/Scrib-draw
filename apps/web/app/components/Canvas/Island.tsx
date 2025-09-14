@@ -6,7 +6,6 @@ import {
   Eraser,
   Pen,
   Hand,
-  Diamond,
   Type,
   MoveRight,
   Minus,

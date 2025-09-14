@@ -1,3 +1,4 @@
+import CharacteristicsIsland from "./components/Canvas/Characteristics";
 import Island from "./components/Canvas/Island";
 import "./globals.css";
 
@@ -19,9 +20,10 @@ export default function RootLayout({
             pointerEvents: "auto", // clickable
           }}
         >
-          <Island />
+        <Island />
+        <CharacteristicsIsland/>
         </div>
-
+          
         {children}
       </body>
     </html>
