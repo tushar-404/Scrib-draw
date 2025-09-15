@@ -49,7 +49,7 @@ export default function StageComponent() {
     let cleanup: (() => void) | undefined;
 
     if (tool === "draw") {
-      cleanup = HandleDraw(stageRef.current, stableSetActions,colors);
+      cleanup = HandleDraw(stageRef.current, stableSetActions,colors.hex);
     } else if (tool === "text") {
       cleanup = HandleText(stageRef.current, stableSetActions);
     }
