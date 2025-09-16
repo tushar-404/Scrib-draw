@@ -38,7 +38,7 @@ export type KonvaTouchEvent = KonvaEventObject<TouchEvent>;
 
 
 
-export type Width = 2 | 4 | 6 | 8 | 10 ;
+export type Width = 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20 ;
 export const WidthAtom = atom<Width>(2);
 
 interface IColor {

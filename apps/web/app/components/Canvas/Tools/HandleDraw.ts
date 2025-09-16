@@ -1,13 +1,12 @@
-
 import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
-import { Action} from "../store";
-
+import { Action, Width } from "../store";
 
 export default function HandleDraw(
   stage: Konva.Stage,
   setActions: Dispatch<SetStateAction<Action[]>>,
-  color:string
+  color: string,
+  strokeWidth: Width,
 ) {
   const isDrawing = { current: false };
   const lastLinePoints = { current: [] as number[] };
@@ -15,12 +14,12 @@ export default function HandleDraw(
     isDrawing.current = true;
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
-    
+
     lastLinePoints.current = [pos.x, pos.y];
 
     setActions((prev: Action[]) => [
       ...prev,
-      { tool: "draw", points: lastLinePoints.current ,stroke:color },
+      { tool: "draw", points: lastLinePoints.current, stroke: color,strokeWidth:strokeWidth },
     ]);
   };
 
@@ -53,4 +52,3 @@ export default function HandleDraw(
     stage.off("mouseup", handleMouseUp);
   };
 }
-
