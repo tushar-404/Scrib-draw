@@ -11,7 +11,6 @@ export type Tool =
   | "text"
   | "eraser";
 export const toolAtom = atom<Tool>("draw");
-export const selectedIdsAtom = atom<number[]>([]);
 
 export interface DrawAction {
   tool: Tool;
@@ -26,35 +25,31 @@ export interface TextAction {
   text: string;
   fontSize?: number;
   fill?: string;
-  edit:boolean;
+  edit: boolean;
 }
-
-
-
 export interface ArrowAction {
   tool: "arrow";
   stroke: string;
-  points: [number, number, number, number];    
+  points: [number, number, number, number];
   strokeWidth: number;
   pointerLength?: number;
-  pointerWidth?: number; 
-  fill?: string;        
+  pointerWidth?: number;
+  fill?: string;
 }
 
-
 export type Action = DrawAction | TextAction | ArrowAction;
+
+// New: track selection
+export const selectedIdsAtom = atom<number[]>([]);
+
 export const actionsAtom = atom<Action[]>([]);
 export const redoAtom = atom<Action[]>([]);
-
 export const StageSizeAtom = atom({ width: 0, height: 0 });
+
 export type KonvaMouseEvent = KonvaEventObject<MouseEvent>;
 export type KonvaWheelEvent = KonvaEventObject<WheelEvent>;
-export type KonvaTouchEvent = KonvaEventObject<TouchEvent>;
 
-
-
-
-export type Width = 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20 ;
+export type Width = 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
 export const WidthAtom = atom<Width>(2);
 
 interface IColor {
@@ -69,6 +64,5 @@ export const ColorAtom = atom<IColor>({
   hsv: { h: 263, s: 85, v: 80 },
 });
 
+export const ShowSideBarAtom = atom<boolean>(false);
 
-
-export const ShowSideBarAtom=atom<boolean>(false);
