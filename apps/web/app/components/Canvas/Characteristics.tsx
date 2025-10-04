@@ -1,6 +1,6 @@
 "use client";
 import { useAtom } from "jotai";
-import { ColorAtom, Width, WidthAtom } from "./store";
+import { ColorAtom, ShowSideBarAtom, Width, WidthAtom } from "./store";
 import { ColorPicker, useColor } from "react-color-palette";
 import "react-color-palette/css";
 import { useEffect, useState } from "react";
@@ -9,18 +9,18 @@ import { Palette } from "lucide-react";
 export default function CharacteristicsIsland() {
   const [colors, setColors] = useAtom(ColorAtom);
   const [color, setColor] = useColor("#000000");
-  const [showPallete, setShowPallete] = useState(false);
+  const [showPallete, setShowPallete] = useAtom(ShowSideBarAtom);
   const [width, setWidth] = useAtom(WidthAtom);
   useEffect(() => {
     setColors(color);
   }, [color, setColors]);
 
   return (
-    <div className="fixed m-4 ">
+    <div className="fixed m-4">
       <Palette
         color={colors.hex}
         onClick={() => setShowPallete(!showPallete)}
-        className={`cursor-pointer shadow  border-transparent border-[1px]  rounded-lg`}
+        className={`cursor-pointer shadow  border-transparent border-[1px]  rounded-lg bg-white`}
         onMouseDown={(e) => (e.currentTarget.style.borderColor = colors.hex)}
         onMouseUp={(e) => (e.currentTarget.style.borderColor = "transparent")}
       />

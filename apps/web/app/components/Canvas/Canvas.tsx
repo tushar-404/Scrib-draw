@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
 import { useEffect, useRef, useCallback, useState, use } from "react";
-import { Stage, Layer, Line, Text } from "react-konva";
+import { Stage, Layer, Line, Text, Arrow } from "react-konva";
 import HandleDraw from "./Tools/HandleDraw";
 import {
   actionsAtom,
@@ -10,10 +10,14 @@ import {
   StageSizeAtom,
   ColorAtom,
   WidthAtom,
+  ShowSideBarAtom,
+  ArrowAction,
 } from "./store";
 import Konva from "konva";
 import { SetStateAction } from "jotai";
 import HandleText from "./Tools/HandleText";
+import HandleArrow from "./Tools/HandleArrow";
+import HandleStraightLine from "./Tools/HandleStraightLine";
 
 export default function StageComponent() {
   const [actions] = useAtom(actionsAtom);
@@ -24,6 +28,7 @@ export default function StageComponent() {
   const [stageSize, setStageSize] = useAtom(StageSizeAtom);
   const [colors] = useAtom(ColorAtom);
   const [width] = useAtom(WidthAtom);
+  const [, setShowSidebar] = useAtom(ShowSideBarAtom);
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -58,7 +63,22 @@ export default function StageComponent() {
       );
     } else if (tool === "text") {
       cleanup = HandleText(stageRef.current, stableSetActions);
+    } else if (tool === "arrow") {
+      cleanup = HandleArrow(
+        stageRef.current,
+        stableSetActions,
+        colors.hex,
+        width,
+      );
+    } else if (tool === "straightline") {
+      cleanup = HandleStraightLine(
+        stageRef.current,
+        stableSetActions,
+        colors.hex,
+        width,
+      );
     }
+
     return () => {
       if (cleanup) cleanup();
     };
@@ -109,6 +129,9 @@ export default function StageComponent() {
         height={stageSize.height}
         onWheel={handleWheel}
         ref={stageRef}
+        onMouseDown={() => {
+          setShowSidebar(false);
+        }}
         draggable={tool === "pan"}
       >
         <Layer>
@@ -121,6 +144,22 @@ export default function StageComponent() {
                   stroke={action.stroke}
                   strokeWidth={action.strokeWidth}
                   tension={0.5}
+                  lineCap="round"
+                  lineJoin="round"
+                />
+              );
+            }
+            if (action.tool === "arrow") {
+              const arrow = action as ArrowAction;
+              return (
+                <Arrow
+                  key={i}
+                  points={arrow.points}
+                  stroke={arrow.stroke}
+                  strokeWidth={arrow.strokeWidth}
+                  pointerLength={arrow.pointerLength || 20}
+                  pointerWidth={arrow.pointerWidth || 20}
+                  fill={arrow.fill || arrow.stroke}
                   lineCap="round"
                   lineJoin="round"
                 />

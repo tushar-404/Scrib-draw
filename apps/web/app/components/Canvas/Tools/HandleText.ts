@@ -1,4 +1,4 @@
-// HandleText.ts
+// HandleText
 import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
 import { Action, TextAction } from "../store";
@@ -14,10 +14,11 @@ export default function HandleText(
     const newText: TextAction = {
       tool: "text",
       x: pos.x,
-      y: pos.y,
+      y: pos.y, 
       text: "New Text",
       fontSize: 20,
       fill: "black",
+      edit:false,
     };
 
     setActions((prev) => [...prev, newText]);

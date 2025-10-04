@@ -11,6 +11,7 @@ export type Tool =
   | "text"
   | "eraser";
 export const toolAtom = atom<Tool>("draw");
+export const selectedIdsAtom = atom<number[]>([]);
 
 export interface DrawAction {
   tool: Tool;
@@ -25,8 +26,23 @@ export interface TextAction {
   text: string;
   fontSize?: number;
   fill?: string;
+  edit:boolean;
 }
-export type Action = DrawAction | TextAction;
+
+
+
+export interface ArrowAction {
+  tool: "arrow";
+  stroke: string;
+  points: [number, number, number, number];    
+  strokeWidth: number;
+  pointerLength?: number;
+  pointerWidth?: number; 
+  fill?: string;        
+}
+
+
+export type Action = DrawAction | TextAction | ArrowAction;
 export const actionsAtom = atom<Action[]>([]);
 export const redoAtom = atom<Action[]>([]);
 
@@ -52,3 +68,7 @@ export const ColorAtom = atom<IColor>({
   rgb: { r: 86, g: 30, b: 203 },
   hsv: { h: 263, s: 85, v: 80 },
 });
+
+
+
+export const ShowSideBarAtom=atom<boolean>(false);
