@@ -32,6 +32,7 @@ import {
   FillboolAtom,
   selectedIdsAtom,
   currentLayerAtom,
+  finalLayerAtom,
 } from "./store";
 
 import Konva from "konva";
@@ -173,9 +174,30 @@ export default function StageComponent() {
   ]);
 
   // Keep current layer updated
+  const [finalLayer, setFinalLayer] = useAtom(finalLayerAtom);
   useEffect(() => {
-    setCurrentLayer((prev) => [...prev, actions]);
-  }, [actions, setCurrentLayer]);
+    setCurrentLayer((prev) => {
+      let updatedLayer = [...prev];
+
+      if (actions.length === 0) {
+        // actions empty → push finalLayer if exists
+        if (finalLayer.length > 0) {
+          updatedLayer.push(finalLayer);
+        }
+      } else {
+        // actions non-empty → push actions
+        updatedLayer.push(actions);
+        setFinalLayer(actions); // update finalLayer
+      }
+
+      // always set actions as the current finalLayer
+      if (updatedLayer.length > 0) {
+        setActions(updatedLayer[updatedLayer.length - 1]);
+      }
+
+      return updatedLayer;
+    });
+  }, [actions, setCurrentLayer, finalLayer, setFinalLayer, setActions]);
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     if (!e.evt.ctrlKey) return;
@@ -235,7 +257,7 @@ export default function StageComponent() {
         draggable={tool === "pan"}
       >
         <Layer>
-          {(currentLayer[currentLayer.length - 1] || []).map((action, i) => {
+          {finalLayer.map((action, i) => {
             const isSelected = selectedIds.includes(action.id);
 
             switch (action.tool) {

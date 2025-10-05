@@ -85,9 +85,10 @@ export const selectedIdsAtom = atom<string[]>([]);
 export const lastIndexAtom = atom<number | null>(null);
 
 // Persisted atoms
-export const actionsAtom = atomWithStorage<Action[]>("actions", []);
-export const currentLayerAtom = atomWithStorage<ActionArray[]>("currentLayer", []);
-export const redoAtom = atomWithStorage<ActionArray[]>("redo", []);
+export const actionsAtom = atom<Action[]>([]);
+export const currentLayerAtom = atom<ActionArray[]>([]);
+export const redoAtom = atom<ActionArray[]>([]);
+export const finalLayerAtom=atomWithStorage<Action[]>("finalLayer",[]);
 
 // Non-persisted atoms
 export const StageSizeAtom = atom({ width: 0, height: 0 });
