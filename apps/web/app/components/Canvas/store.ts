@@ -76,6 +76,8 @@ export type Action =
 // -------------------- Atoms --------------------
 // Action & selection tracking
 export const actionsAtom = atom<Action[]>([]);
+export const actionsSnapshotAtom = atom((get) => get(actionsAtom));
+
 export const selectedIdsAtom = atom<number[]>([]);
 
 // Undo/redo history

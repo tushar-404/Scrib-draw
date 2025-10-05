@@ -1,4 +1,5 @@
-"use client"
+"use client";
+
 import { useAtom } from "jotai";
 import { actionsAtom, redoAtom, Tool, toolAtom } from "./store";
 import {
@@ -13,12 +14,11 @@ import {
   Redo2,
   Square,
 } from "lucide-react";
+//type Tool = 'select'||'pan' | 'diamond' | 'arrow' | 'straightline' |  'draw'| 'text'| 'eraser'
 
 export default function Island() {
   const [tool, setTool] = useAtom(toolAtom);
   const [, setActions] = useAtom(actionsAtom);
-  const [, setRedoActions] = useAtom(redoAtom);
-
   const toolArray = [
     { icon: SquareDashedMousePointer, type: "select" },
     { icon: Hand, type: "pan" },
@@ -29,6 +29,7 @@ export default function Island() {
     { icon: Type, type: "text" },
     { icon: Eraser, type: "eraser" },
   ];
+  const [, setRedoActions] = useAtom(redoAtom);
 
   function undo() {
     setActions((prev) => {
@@ -49,7 +50,6 @@ export default function Island() {
       return prev.slice(0, -1);
     });
   }
-
   return (
     <>
       <div className="fixed top-4 left-1/2 -translate-x-1/2 flex w-max gap-1 justify-center p-[2px] bg-white rounded-lg shadow">
@@ -83,4 +83,3 @@ export default function Island() {
     </>
   );
 }
-
