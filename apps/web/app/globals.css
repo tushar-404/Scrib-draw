@@ -1,8 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Audiowide&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Zalando+Sans+SemiExpanded:ital,wght@0,200..900;1,200..900&display=swap");
 @import "tailwindcss";
 
 @theme {
   --font-audiowide: "Audiowide", cursive;
+  --font-minefont: "Zalando+Sans+SemiExpanded", sans;
+  
 }
-

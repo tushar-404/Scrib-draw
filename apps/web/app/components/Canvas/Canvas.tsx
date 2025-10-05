@@ -1,4 +1,4 @@
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useRef, useCallback } from "react";
 import {
   Stage,
@@ -15,6 +15,8 @@ import HandleText from "./Tools/HandleText";
 import HandleArrow from "./Tools/HandleArrow";
 import HandleStraightLine from "./Tools/HandleStraightLine";
 import HandleSelect from "./Tools/HandleSelect";
+import HandleSquare from "./Tools/HandleSquare";
+import HandleEraser from "./Tools/HandleEraser";
 
 import {
   actionsAtom,
@@ -27,6 +29,8 @@ import {
   ShowSideBarAtom,
   ArrowAction,
   selectedIdsAtom,
+  FillAtom,
+  FillboolAtom,
 } from "./store";
 
 import Konva from "konva";
@@ -39,19 +43,21 @@ export default function StageComponent() {
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
   const [stageSize, setStageSize] = useAtom(StageSizeAtom);
   const [colors] = useAtom(ColorAtom);
   const [width] = useAtom(WidthAtom);
   const [, setShowSidebar] = useAtom(ShowSideBarAtom);
   const [selectedIds, setSelectedIds] = useAtom(selectedIdsAtom);
+  const [fill] = useAtom(FillAtom);
+  const fillEnabled = useAtomValue(FillboolAtom);
 
- 
+  // Update transformer nodes on selection change
   useEffect(() => {
     if (tool !== "select" || !trRef.current || !stageRef.current) {
       trRef.current?.nodes([]);
       return;
     }
-
     const nodes = selectedIds
       .map((id) => stageRef.current?.findOne("#" + id))
       .filter((node): node is Konva.Node => !!node);
@@ -60,7 +66,7 @@ export default function StageComponent() {
     trRef.current.getLayer()?.batchDraw();
   }, [selectedIds, tool]);
 
-
+  // Update stage size on window resize
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -70,6 +76,7 @@ export default function StageComponent() {
         });
       }
     };
+
     updateSize();
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
@@ -79,10 +86,10 @@ export default function StageComponent() {
     (updater: SetStateAction<Action[]>) => {
       setActions(updater);
     },
-    [setActions],
+    [setActions]
   );
 
-
+  // Handle tool setup
   useEffect(() => {
     if (!stageRef.current) return;
     let cleanup: (() => void) | undefined;
@@ -91,42 +98,43 @@ export default function StageComponent() {
       trRef.current.nodes([]);
     }
 
-    if (tool === "draw") {
-      cleanup = HandleDraw(
-        stageRef.current,
-        stableSetActions,
-        colors.hex,
-        width,
-      );
-    } else if (tool === "text") {
-      cleanup = HandleText(stageRef.current, stableSetActions);
-    } else if (tool === "arrow") {
-      cleanup = HandleArrow(
-        stageRef.current,
-        stableSetActions,
-        colors.hex,
-        width,
-      );
-    } else if (tool === "straightline") {
-      cleanup = HandleStraightLine(
-        stageRef.current,
-        stableSetActions,
-        colors.hex,
-        width,
-      );
-    } else if (tool === "select") {
-      cleanup = HandleSelect({
-        stage: stageRef.current,
-        selectedIds,
-        setSelectedIds,
-      });
+    switch (tool) {
+      case "draw":
+        cleanup = HandleDraw(stageRef.current, stableSetActions, colors.hex, width);
+        break;
+      case "text":
+        cleanup = HandleText(stageRef.current, stableSetActions, colors.hex, width);
+        break;
+      case "arrow":
+        cleanup = HandleArrow(stageRef.current, stableSetActions, colors.hex, width);
+        break;
+      case "straightline":
+        cleanup = HandleStraightLine(stageRef.current, stableSetActions, colors.hex, width);
+        break;
+      case "square":
+        cleanup = HandleSquare(
+          stageRef.current,
+          stableSetActions,
+          colors.hex,
+          width,
+          fill.hex,
+          fillEnabled
+        );
+        break;
+      case "select":
+        cleanup = HandleSelect({ stage: stageRef.current, selectedIds, setSelectedIds });
+        break;
+      case "eraser":
+        cleanup = HandleEraser({ stage: stageRef.current });
+        break;
     }
 
     return () => {
       if (cleanup) cleanup();
     };
-  }, [tool, stableSetActions, colors.hex, width, selectedIds, setSelectedIds]);
+  }, [tool, stableSetActions, colors.hex, width, selectedIds, setSelectedIds, fill, fillEnabled]);
 
+  // Zoom handler
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     if (!e.evt.ctrlKey) return;
     e.evt.preventDefault();
@@ -159,14 +167,22 @@ export default function StageComponent() {
   return (
     <div
       ref={containerRef}
-      style={{ width: "100vw", height: "100vh" }}
-      className={
-        tool === "draw"
-          ? "cursor-crosshair"
-          : tool === "pan"
-            ? "cursor-grab"
-            : ""
-      }
+      style={{
+        width: "100vw",
+        height: "100vh",
+        cursor:
+          tool === "draw"
+            ? "crosshair"
+            : tool === "pan"
+            ? "grab"
+            : tool === "eraser"
+            ? `url('data:image/svg+xml;utf8,${encodeURIComponent(
+                `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40">
+                  <rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5" rx="7" ry="4" transform="rotate(-45 30 20)"/>
+                </svg>`
+              )}') 30 20, auto`
+            : "default",
+      }}
     >
       <Stage
         width={stageSize.width}
@@ -180,88 +196,95 @@ export default function StageComponent() {
           {actions.map((action, i) => {
             const isSelected = selectedIds.includes(i);
 
-      
-            if (action.tool === "draw") {
-              return (
-                <Line
-                  key={i}
-                  id={String(i)}
-                  points={action.points}
-                  stroke={action.stroke}
-                  strokeWidth={action.strokeWidth}
-                  tension={0.5}
-                  lineCap="round"
-                  lineJoin="round"
-                  draggable={isSelected && tool === "select"}
-                  hitStrokeWidth={isSelected ? 50 : 10} 
-                />
-              );
-            }
+            switch (action.tool) {
+              case "draw":
+              case "straightline":
+                return (
+                  <Line
+                    key={i}
+                    id={String(i)}
+                    points={action.points}
+                    stroke={action.stroke}
+                    strokeWidth={action.strokeWidth}
+                    tension={0.5}
+                    lineCap="round"
+                    lineJoin="round"
+                    draggable={isSelected && tool === "select"}
+                    hitStrokeWidth={isSelected ? 100 : 10}
+                  />
+                );
 
-       
-            if (action.tool === "arrow") {
-              const arrow = action as ArrowAction;
-              return (
-                <Arrow
-                  key={i}
-                  id={String(i)}
-                  points={arrow.points}
-                  stroke={arrow.stroke}
-                  strokeWidth={arrow.strokeWidth}
-                  pointerLength={arrow.pointerLength || 20}
-                  pointerWidth={arrow.pointerWidth || 20}
-                  fill={arrow.fill || arrow.stroke}
-                  lineCap="round"
-                  lineJoin="round"
-                  draggable={isSelected && tool === "select"}
-                  hitStrokeWidth={isSelected ? 50 : 10} 
-                />
-              );
-            }
+              case "arrow": {
+                const arrow = action as ArrowAction;
+                return (
+                  <Arrow
+                    key={i}
+                    id={String(i)}
+                    points={arrow.points}
+                    stroke={arrow.stroke}
+                    strokeWidth={arrow.strokeWidth}
+                    pointerLength={arrow.pointerLength || 20}
+                    pointerWidth={arrow.pointerWidth || 20}
+                    fill={arrow.fill || arrow.stroke}
+                    lineCap="round"
+                    lineJoin="round"
+                    draggable={isSelected && tool === "select"}
+                    hitStrokeWidth={isSelected ? 100 : 10}
+                  />
+                );
+              }
 
-        
-            if (action.tool === "text") {
-              const textAction = action as TextAction;
-              return (
-                <>
-                  {isSelected && (
-                    <Rect
-                      x={textAction.x}
-                      y={textAction.y}
-                      width={
-                        textAction.text.length *
-                        (textAction.fontSize || 20) *
-                        0.6
-                      }
-                      height={textAction.fontSize || 20}
-                      fill="rgba(0,0,0,0)" 
-                      draggable
-                    />
-                  )}
+              case "square":
+                return (
+                  <Rect
+                    key={i}
+                    id={String(i)}
+                    x={action.x}
+                    y={action.y}
+                    width={action.width}
+                    height={action.height}
+                    cornerRadius={10}
+                    stroke={action.stroke}
+                    strokeWidth={action.strokeWidth}
+                    fill={action.fill || ""}
+                    draggable={isSelected && tool === "select"}
+                  />
+                );
+
+              case "text": {
+                const textAction = action as TextAction;
+                return textAction.textarea ? (
+                  <div key={i}>{document.body.appendChild(textAction.textarea)}</div>
+                ) : (
                   <Text
                     key={i}
                     id={String(i)}
                     x={textAction.x}
                     y={textAction.y}
                     text={textAction.text}
-                    fontSize={textAction.fontSize || 20}
-                    fill={textAction.fill || "black"}
+                    fontSize={textAction.fontSize}
+                    fill={textAction.fill}
+                    fontFamily="Arial"
+                    hitStrokeWidth={isSelected ? 30 : 10}
                     draggable={isSelected && tool === "select"}
                   />
-                </>
-              );
-            }
+                );
+              }
 
-            return null;
+              default:
+                return null;
+            }
           })}
 
           {tool === "select" && (
             <Transformer
               ref={trRef}
-              boundBoxFunc={(oldBox, newBox) => {
-                if (newBox.width < 5 || newBox.height < 5) return oldBox;
-                return newBox;
-              }}
+              borderStroke="blue"
+              borderDash={[6, 4]}
+              borderStrokeWidth={1}
+              anchorStroke="blue"
+              anchorFill="white"
+              anchorSize={6}
             />
           )}
         </Layer>
@@ -269,3 +292,4 @@ export default function StageComponent() {
     </div>
   );
 }
+

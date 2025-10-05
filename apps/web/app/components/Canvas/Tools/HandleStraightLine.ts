@@ -1,6 +1,6 @@
 import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
-import { Action, ArrowAction, Width } from "../store";
+import { Action, StraightLineAction, Width } from "../store";
 
 export default function HandleStraightLine(
   stage: Konva.Stage,
@@ -18,14 +18,14 @@ export default function HandleStraightLine(
     isDrawing.current = true;
     startPos.current = pos;
 
-    const newArrow: ArrowAction = {
-      tool: "arrow",
+    const newLine: StraightLineAction = {
+      tool: "straightline",
       points: [pos.x, pos.y, pos.x, pos.y],
       stroke: color,
       strokeWidth: strokeWidth,
     };
 
-    setActions((prev: Action[]) => [...prev, newArrow]);
+    setActions((prev: Action[]) => [...prev, newLine]);
   };
 
   const handleMouseMove = () => {
@@ -35,10 +35,10 @@ export default function HandleStraightLine(
 
     setActions((prev: Action[]) => {
       const last = prev[prev.length - 1];
-      if (last && last.tool === "arrow") {
-        const arrowLast = last as ArrowAction;
-        const updated: ArrowAction = {
-          ...arrowLast,
+      if (last && last.tool === "straightline") {
+        const lineLast = last as StraightLineAction;
+        const updated: StraightLineAction = {
+          ...lineLast,
           points: [startPos.current.x, startPos.current.y, pos.x, pos.y],
         };
         return [...prev.slice(0, -1), updated];
@@ -53,9 +53,9 @@ export default function HandleStraightLine(
 
     setActions((prev: Action[]) => {
       const last = prev[prev.length - 1];
-      if (last && last.tool === "arrow") {
-        const arrowLast = last as ArrowAction;
-        const [x1, y1, x2, y2] = arrowLast.points;
+      if (last && last.tool === "straightline") {
+        const lineLast = last as StraightLineAction;
+        const [x1, y1, x2, y2] = lineLast.points;
         const dx = x2 - x1;
         const dy = y2 - y1;
         const length = Math.sqrt(dx * dx + dy * dy);
@@ -78,3 +78,4 @@ export default function HandleStraightLine(
     stage.off("mouseup", handleMouseUp);
   };
 }
+

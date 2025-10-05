@@ -30,7 +30,7 @@ export default function HandleSelect({ stage, setSelectedIds, selectedIds }: Han
   const selectionRect = new Konva.Rect({
     fill: "rgba(0, 0, 255, 0.2)",
     stroke: "#0000FF",
-    strokeWidth: 1,
+    strokeWidth: 0.2,
     visible: false,
   });
   selectionLayer.add(selectionRect);
