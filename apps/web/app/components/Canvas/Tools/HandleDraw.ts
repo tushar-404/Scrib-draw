@@ -2,6 +2,7 @@
 import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
 import { Action, Width } from "../store";
+import { nanoid } from "nanoid";
 
 export default function HandleDraw(
   stage: Konva.Stage,
@@ -20,7 +21,13 @@ export default function HandleDraw(
 
     setActions((prev: Action[]) => [
       ...prev,
-      { tool: "draw", points: lastLinePoints.current, stroke: color,strokeWidth:strokeWidth },
+      {
+        id:nanoid(),
+        tool: "draw",
+        points: lastLinePoints.current,
+        stroke: color,
+        strokeWidth: strokeWidth,
+      },
     ]);
   };
 

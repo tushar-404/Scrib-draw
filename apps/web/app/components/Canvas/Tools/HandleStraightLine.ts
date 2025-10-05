@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
 import { Action, StraightLineAction, Width } from "../store";
+import { nanoid } from "nanoid";
 
 export default function HandleStraightLine(
   stage: Konva.Stage,
@@ -19,6 +20,7 @@ export default function HandleStraightLine(
     startPos.current = pos;
 
     const newLine: StraightLineAction = {
+      id: nanoid(),
       tool: "straightline",
       points: [pos.x, pos.y, pos.x, pos.y],
       stroke: color,
@@ -78,4 +80,3 @@ export default function HandleStraightLine(
     stage.off("mouseup", handleMouseUp);
   };
 }
-

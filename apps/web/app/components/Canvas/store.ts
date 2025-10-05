@@ -1,7 +1,8 @@
 import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 import { KonvaEventObject } from "konva/lib/Node";
 
-// -------------------- Tool Types --------------------
+// ----- Tool type -----
 export type Tool =
   | "select"
   | "pan"
@@ -11,11 +12,11 @@ export type Tool =
   | "draw"
   | "text"
   | "eraser";
-
 export const toolAtom = atom<Tool>("draw");
 
-// -------------------- Action Interfaces --------------------
+// ----- Action interfaces -----
 export interface DrawAction {
+  id?: string;
   tool: Tool;
   points: number[];
   stroke: string;
@@ -25,16 +26,18 @@ export interface DrawAction {
 }
 
 export interface TextAction {
+  id?: string;
   tool: "text";
   x: number;
   y: number;
   text: string;
   fill: string;
   fontSize: number;
-  textarea?: HTMLTextAreaElement; // optional, only for live input
+  textarea?: HTMLTextAreaElement;
 }
 
 export interface ArrowAction {
+  id?: string;
   tool: "arrow";
   stroke: string;
   points: [number, number, number, number];
@@ -47,6 +50,7 @@ export interface ArrowAction {
 }
 
 export interface StraightLineAction {
+  id?: string;
   tool: "straightline";
   points: number[];
   stroke: string;
@@ -56,6 +60,7 @@ export interface StraightLineAction {
 }
 
 export interface SquareAction {
+  id?: string;
   tool: "square";
   x: number;
   y: number;
@@ -73,29 +78,28 @@ export type Action =
   | StraightLineAction
   | SquareAction;
 
-// -------------------- Atoms --------------------
-// Action & selection tracking
-export const actionsAtom = atom<Action[]>([]);
-export const actionsSnapshotAtom = atom((get) => get(actionsAtom));
+export type ActionArray = Action[];
 
-export const selectedIdsAtom = atom<number[]>([]);
+// ----- Atoms -----
+export const selectedIdsAtom = atom<string[]>([]);
+export const lastIndexAtom = atom<number | null>(null);
 
-// Undo/redo history
-export const historyAtom = atom<Action[][]>([]);
-export const redoAtom = atom<Action[][]>([]);
+// Persisted atoms
+export const actionsAtom = atomWithStorage<Action[]>("actions", []);
+export const currentLayerAtom = atomWithStorage<ActionArray[]>("currentLayer", []);
+export const redoAtom = atomWithStorage<ActionArray[]>("redo", []);
 
-// Stage size
+// Non-persisted atoms
 export const StageSizeAtom = atom({ width: 0, height: 0 });
 
-// -------------------- Konva Event Types --------------------
 export type KonvaMouseEvent = KonvaEventObject<MouseEvent>;
 export type KonvaWheelEvent = KonvaEventObject<WheelEvent>;
 
-// -------------------- Stroke Width --------------------
+// ----- Width -----
 export type Width = 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
 export const WidthAtom = atom<Width>(2);
 
-// -------------------- Color --------------------
+// ----- Color -----
 interface IColor {
   hex: string;
   rgb: { r: number; g: number; b: number };
@@ -115,7 +119,5 @@ export const FillAtom = atom<IColor>({
 });
 
 export const FillboolAtom = atom<boolean>(false);
-
-// -------------------- UI --------------------
 export const ShowSideBarAtom = atom<boolean>(false);
 

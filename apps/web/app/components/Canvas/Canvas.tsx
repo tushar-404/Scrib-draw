@@ -20,32 +20,29 @@ import HandleEraser from "./Tools/HandleEraser";
 
 import {
   actionsAtom,
+  Action,
+  ArrowAction,
   TextAction,
   toolAtom,
-  Action,
   StageSizeAtom,
   ColorAtom,
   WidthAtom,
   ShowSideBarAtom,
-  ArrowAction,
-  selectedIdsAtom,
   FillAtom,
   FillboolAtom,
-  actionsSnapshotAtom,
+  selectedIdsAtom,
+  currentLayerAtom,
 } from "./store";
 
 import Konva from "konva";
-import { SetStateAction } from "jotai";
+import { RotateCcw } from "lucide-react";
 
 export default function StageComponent() {
-  const [actions] = useAtom(actionsAtom);
+  const [actions, setActions] = useAtom(actionsAtom);
   const [tool] = useAtom(toolAtom);
-  const [, setActions] = useAtom(actionsAtom);
-
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
   const [stageSize, setStageSize] = useAtom(StageSizeAtom);
   const [colors] = useAtom(ColorAtom);
   const [width] = useAtom(WidthAtom);
@@ -53,19 +50,38 @@ export default function StageComponent() {
   const [selectedIds, setSelectedIds] = useAtom(selectedIdsAtom);
   const [fill] = useAtom(FillAtom);
   const fillEnabled = useAtomValue(FillboolAtom);
-  const [actionSnapshot, setActionSnapshot] = useAtom(actionsSnapshotAtom);
+  const [currentLayer, setCurrentLayer] = useAtom(currentLayerAtom);
+
+  // Update a specific action
+  const updateAction = (idx: number, updates: Partial<Action>) => {
+    setActions((prev) =>
+      prev.map((a, i) => (i === idx ? { ...a, ...updates } : a)),
+    );
+  };
+
+  const stableSetActions = useCallback(
+    (updater: Parameters<typeof setActions>[0]) => {
+      setActions(updater);
+    },
+    [setActions],
+  );
+
+  // Keep transformer updated on selection
   useEffect(() => {
     if (tool !== "select" || !trRef.current || !stageRef.current) {
       trRef.current?.nodes([]);
       return;
     }
+
     const nodes = selectedIds
       .map((id) => stageRef.current?.findOne("#" + id))
       .filter((node): node is Konva.Node => !!node);
+
     trRef.current.nodes(nodes);
     trRef.current.getLayer()?.batchDraw();
   }, [selectedIds, tool]);
 
+  // Resize stage dynamically
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -80,13 +96,7 @@ export default function StageComponent() {
     return () => window.removeEventListener("resize", updateSize);
   }, [setStageSize]);
 
-  const stableSetActions = useCallback(
-    (updater: SetStateAction<Action[]>) => {
-      setActions(updater);
-    },
-    [setActions],
-  );
-
+  // Tool handlers
   useEffect(() => {
     if (!stageRef.current) return;
     let cleanup: (() => void) | undefined;
@@ -95,56 +105,62 @@ export default function StageComponent() {
       trRef.current.nodes([]);
     }
 
-    if (tool === "draw") {
-      cleanup = HandleDraw(
-        stageRef.current,
-        stableSetActions,
-        colors.hex,
-        width,
-      );
-    } else if (tool === "text") {
-      cleanup = HandleText(
-        stageRef.current,
-        stableSetActions,
-        colors.hex,
-        width,
-      );
-    } else if (tool === "arrow") {
-      cleanup = HandleArrow(
-        stageRef.current,
-        stableSetActions,
-        colors.hex,
-        width,
-      );
-    } else if (tool === "straightline") {
-      cleanup = HandleStraightLine(
-        stageRef.current,
-        stableSetActions,
-        colors.hex,
-        width,
-      );
-    } else if (tool === "square") {
-      cleanup = HandleSquare(
-        stageRef.current,
-        stableSetActions,
-        colors.hex,
-        width,
-        fill.hex,
-        fillEnabled,
-      );
-    } else if (tool === "select") {
-      cleanup = HandleSelect({
-        stage: stageRef.current,
-        selectedIds,
-        setSelectedIds,
-      });
-    } else if (tool === "eraser") {
-      cleanup = HandleEraser({ stage: stageRef.current });
+    switch (tool) {
+      case "draw":
+        cleanup = HandleDraw(
+          stageRef.current,
+          stableSetActions,
+          colors.hex,
+          width,
+        );
+        break;
+      case "text":
+        cleanup = HandleText(
+          stageRef.current,
+          stableSetActions,
+          colors.hex,
+          width,
+        );
+        break;
+      case "arrow":
+        cleanup = HandleArrow(
+          stageRef.current,
+          stableSetActions,
+          colors.hex,
+          width,
+        );
+        break;
+      case "straightline":
+        cleanup = HandleStraightLine(
+          stageRef.current,
+          stableSetActions,
+          colors.hex,
+          width,
+        );
+        break;
+      case "square":
+        cleanup = HandleSquare(
+          stageRef.current,
+          stableSetActions,
+          colors.hex,
+          width,
+          fill.hex,
+          fillEnabled,
+        );
+        break;
+      case "select":
+        cleanup = HandleSelect({
+          stage: stageRef.current,
+          selectedIds,
+          setSelectedIds,
+        });
+        break;
+      case "eraser":
+        cleanup = HandleEraser({ stage: stageRef.current });
+        break;
     }
 
-    return () => {
-      if (cleanup) cleanup();
-    };
+    return () => cleanup?.();
   }, [
     tool,
     stableSetActions,
@@ -155,6 +171,11 @@ export default function StageComponent() {
     fill,
     fillEnabled,
   ]);
+
+  // Keep current layer updated
+  useEffect(() => {
+    setCurrentLayer((prev) => [...prev, actions]);
+  }, [actions, setCurrentLayer]);
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     if (!e.evt.ctrlKey) return;
@@ -178,12 +199,10 @@ export default function StageComponent() {
 
     stage.scale({ x: newScale, y: newScale });
 
-    const newPos = {
+    stage.position({
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
-    };
-
-    stage.position(newPos);
+    });
   };
 
   return (
@@ -198,11 +217,12 @@ export default function StageComponent() {
             : tool === "pan"
               ? "grab"
               : tool === "eraser"
-                ? `url('data:image/svg+xml;utf8,${encodeURIComponent(
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40">
-                  <rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5" rx="7" ry="4" transform="rotate(-45 30 20)"/>
-                </svg>`,
-                  )}') 30 20, auto`
+                ? `url('data:image/svg+xml;utf8,${encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40">
+                <rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5"
+                  rx="7" ry="4" transform="rotate(-45 30 20)"/>
+              </svg>
+            `)}') 30 20, auto`
                 : "default",
       }}
     >
@@ -215,88 +235,108 @@ export default function StageComponent() {
         draggable={tool === "pan"}
       >
         <Layer>
-          {actions.map((action, i) => {
-            const isSelected = selectedIds.includes(i);
+          {(currentLayer[currentLayer.length - 1] || []).map((action, i) => {
+            const isSelected = selectedIds.includes(action.id);
 
-            if (action.tool === "draw" || action.tool === "straightline") {
-              return (
-                <Line
-                  key={i}
-                  id={String(i)}
-                  points={action.points}
-                  stroke={action.stroke}
-                  strokeWidth={action.strokeWidth}
-                  tension={0.5}
-                  lineCap="round"
-                  lineJoin="round"
-                  draggable={isSelected && tool === "select"}
-                  hitStrokeWidth={isSelected ? 100 : 10}
-                />
-              );
+            switch (action.tool) {
+              case "draw":
+              case "straightline":
+                return (
+                  <Line
+                    key={i}
+                    id={action.id}
+                    points={action.points}
+                    stroke={action.stroke}
+                    strokeWidth={action.strokeWidth}
+                    tension={0.5}
+                    lineCap="round"
+                    lineJoin="round"
+                    x={(action as any).x || 0}
+                    y={(action as any).y || 0}
+                    draggable={isSelected && tool === "select"}
+                    hitStrokeWidth={isSelected ? 100 : 10}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                  />
+                );
+              case "arrow":
+                const arrow = action as ArrowAction;
+                return (
+                  <Arrow
+                    key={i}
+                    id={action.id}
+                    points={arrow.points}
+                    stroke={arrow.stroke}
+                    strokeWidth={arrow.strokeWidth}
+                    pointerLength={arrow.pointerLength || 20}
+                    pointerWidth={arrow.pointerWidth || 20}
+                    fill={arrow.fill || arrow.stroke}
+                    lineCap="round"
+                    lineJoin="round"
+                    x={(arrow as any).x || 0}
+                    y={(arrow as any).y || 0}
+                    draggable={isSelected && tool === "select"}
+                    hitStrokeWidth={isSelected ? 100 : 10}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                  />
+                );
+              case "square":
+                return (
+                  <Rect
+                    key={i}
+                    id={action.id}
+                    x={action.x}
+                    y={action.y}
+                    width={action.width}
+                    height={action.height}
+                    cornerRadius={10}
+                    stroke={action.stroke}
+                    strokeWidth={action.strokeWidth}
+                    fill={action.fill || ""}
+                    draggable={isSelected && tool === "select"}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                    onTransformEnd={(e) => {
+                      const node = e.target as Konva.Rect;
+                      const scaleX = node.scaleX();
+                      const scaleY = node.scaleY();
+                      node.scaleX(1);
+                      node.scaleY(1);
+                      updateAction(i, {
+                        x: node.x(),
+                        y: node.y(),
+                        width: Math.max(1, node.width() * scaleX),
+                        height: Math.max(1, node.height() * scaleY),
+                      });
+                    }}
+                  />
+                );
+              case "text":
+                const textAction = action as TextAction;
+                return (
+                  <Text
+                    key={i}
+                    id={action.id}
+                    x={textAction.x}
+                    y={textAction.y}
+                    text={textAction.text}
+                    fontSize={textAction.fontSize}
+                    fill={textAction.fill}
+                    fontFamily="Arial"
+                    hitStrokeWidth={isSelected ? 30 : 10}
+                    draggable={isSelected && tool === "select"}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                  />
+                );
+              default:
+                return null;
             }
-
-            if (action.tool === "arrow") {
-              const arrow = action as ArrowAction;
-              return (
-                <Arrow
-                  key={i}
-                  id={String(i)}
-                  points={arrow.points}
-                  stroke={arrow.stroke}
-                  strokeWidth={arrow.strokeWidth}
-                  pointerLength={arrow.pointerLength || 20}
-                  pointerWidth={arrow.pointerWidth || 20}
-                  fill={arrow.fill || arrow.stroke}
-                  lineCap="round"
-                  lineJoin="round"
-                  draggable={isSelected && tool === "select"}
-                  hitStrokeWidth={isSelected ? 100 : 10}
-                />
-              );
-            }
-
-            if (action.tool === "square") {
-              return (
-                <Rect
-                  key={i}
-                  id={String(i)}
-                  x={action.x}
-                  y={action.y}
-                  width={action.width}
-                  height={action.height}
-                  cornerRadius={10}
-                  stroke={action.stroke}
-                  strokeWidth={action.strokeWidth}
-                  fill={action.fill || ""}
-                  draggable={isSelected && tool === "select"}
-                />
-              );
-            }
-
-            if (action.tool === "text") {
-              const textAction = action as TextAction;
-              return textAction.textarea ? (
-                <div key={i}>
-                  {/* render DOM textarea from action */}
-                  {document.body.appendChild(textAction.textarea)}
-                </div>
-              ) : (
-                <Text
-                  key={i}
-                  id={String(i)}
-                  x={textAction.x}
-                  y={textAction.y}
-                  text={textAction.text}
-                  fontSize={textAction.fontSize}
-                  fill={textAction.fill}
-                  fontFamily="Arial"
-                  hitStrokeWidth={isSelected ? 30 : 10}
-                  draggable={isSelected && tool === "select"}
-                />
-              );
-            }
-
-            return null;
           })}
 
           {tool === "select" && (
@@ -312,6 +352,22 @@ export default function StageComponent() {
           )}
         </Layer>
       </Stage>
+      {/* Bottom-right Recenter Button */}
+      <div className="fixed bottom-4 right-4 flex items-center gap-2 z-50">
+        <div
+          onClick={() => {
+            if (stageRef.current) {
+              stageRef.current.position({ x: 0, y: 0 });
+              stageRef.current.scale({ x: 1, y: 1 });
+              stageRef.current.batchDraw();
+            }
+          }}
+          className="cursor-pointer flex items-center justify-center p-2 bg-white rounded-lg shadow border-[1px] border-transparent hover:bg-zinc-100 text-zinc-600 active:border-black"
+          title="Recenter Canvas"
+        >
+          <RotateCcw className="w-[10px] h-[10px]" />
+        </div>
+      </div>
     </div>
   );
 }

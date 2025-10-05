@@ -16,8 +16,8 @@ export default function RootLayout({
             top: 0,
             left: 0,
             width: "100%",
-            zIndex: 9999, // above everything
-            pointerEvents: "auto", // clickable
+            zIndex: 9999,
+            pointerEvents: "auto", 
           }}
         >
         <Island />

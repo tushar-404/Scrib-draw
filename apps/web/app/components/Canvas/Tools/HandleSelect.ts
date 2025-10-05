@@ -1,15 +1,25 @@
+import { SetStateAction } from "jotai";
 import Konva from "konva";
 import { Stage } from "konva/lib/Stage";
-import { SetStateAction } from "jotai";
+import { Dispatch } from "react";
 
 interface HandleSelectProps {
   stage: Stage;
-  setSelectedIds: (update: SetStateAction<number[]>) => void;
-  selectedIds: number[];
+  setSelectedIds: Dispatch<SetStateAction<string[]>>;
+  selectedIds: string[];
 }
 
 function haveIntersection(r1: Konva.RectConfig, r2: Konva.RectConfig) {
-  if (!r1.x || !r1.y || !r1.width || !r1.height || !r2.x || !r2.y || !r2.width || !r2.height) {
+  if (
+    !r1.x ||
+    !r1.y ||
+    !r1.width ||
+    !r1.height ||
+    !r2.x ||
+    !r2.y ||
+    !r2.width ||
+    !r2.height
+  ) {
     return false;
   }
   return !(
@@ -20,7 +30,11 @@ function haveIntersection(r1: Konva.RectConfig, r2: Konva.RectConfig) {
   );
 }
 
-export default function HandleSelect({ stage, setSelectedIds, selectedIds }: HandleSelectProps) {
+export default function HandleSelect({
+  stage,
+  setSelectedIds,
+  selectedIds,
+}: HandleSelectProps) {
   let x1: number, y1: number, x2: number, y2: number;
   let isSelectingBox = false;
 
@@ -55,8 +69,8 @@ export default function HandleSelect({ stage, setSelectedIds, selectedIds }: Han
       return;
     }
 
-    const shapeId = parseInt(target.id(), 10);
-    if (isNaN(shapeId)) return;
+    const shapeId = target.id(); // string
+    if (!shapeId) return;
 
     const isShiftPressed = e.evt.shiftKey;
     const isAlreadySelected = selectedIds.includes(shapeId);
@@ -64,14 +78,16 @@ export default function HandleSelect({ stage, setSelectedIds, selectedIds }: Han
     if (!isShiftPressed) {
       if (!isAlreadySelected) setSelectedIds([shapeId]);
     } else {
-      if (isAlreadySelected) setSelectedIds(prev => prev.filter(id => id !== shapeId));
-      else setSelectedIds(prev => [...prev, shapeId]);
+      if (isAlreadySelected) {
+        setSelectedIds((prev: string[]) => prev.filter((id) => id !== shapeId));
+      } else {
+        setSelectedIds((prev: string[]) => [...prev, shapeId]);
+      }
     }
   };
 
   const handleMouseMove = () => {
     if (!isSelectingBox) return;
-
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
     x2 = pos.x;
@@ -95,12 +111,11 @@ export default function HandleSelect({ stage, setSelectedIds, selectedIds }: Han
 
       const shapes = mainLayer.children;
       const box = selectionRect.getClientRect();
-      const selectedInBox: number[] = [];
+      const selectedInBox: string[] = [];
 
-      shapes.forEach(shape => {
-        const shapeId = parseInt(shape.id(), 10);
-        if (isNaN(shapeId)) return;
-
+      shapes.forEach((shape) => {
+        const shapeId = shape.id();
+        if (!shapeId) return;
         const shapeBox = shape.getClientRect();
         if (haveIntersection(box, shapeBox)) selectedInBox.push(shapeId);
       });
@@ -123,4 +138,3 @@ export default function HandleSelect({ stage, setSelectedIds, selectedIds }: Han
     selectionLayer.destroy();
   };
 }
-

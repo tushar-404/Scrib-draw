@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
 import { Action, SquareAction, Width } from "../store";
+import { nanoid } from "nanoid";
 
 export default function HandleSquare(
   stage: Konva.Stage,
@@ -21,6 +22,7 @@ export default function HandleSquare(
     startPos.current = pos;
 
     const newSquare: SquareAction = {
+      id: nanoid(),
       tool: "square",
       x: pos.x,
       y: pos.y,

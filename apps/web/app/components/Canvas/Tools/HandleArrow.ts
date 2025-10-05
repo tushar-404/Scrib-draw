@@ -1,12 +1,13 @@
 import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
 import { Action, ArrowAction, Width } from "../store";
+import { nanoid } from "nanoid";
 
 export default function HandleArrow(
   stage: Konva.Stage,
   setActions: Dispatch<SetStateAction<Action[]>>,
   color: string,
-  strokeWidth: Width
+  strokeWidth: Width,
 ) {
   const isDrawing = { current: false };
   const startPos = { current: { x: 0, y: 0 } };
@@ -19,13 +20,14 @@ export default function HandleArrow(
     startPos.current = pos;
 
     const newArrow: ArrowAction = {
+      id: nanoid(),
       tool: "arrow",
       points: [pos.x, pos.y, pos.x, pos.y],
       stroke: color,
       strokeWidth: strokeWidth,
-      pointerLength: strokeWidth * 4, 
+      pointerLength: strokeWidth * 4,
       pointerWidth: strokeWidth * 3,
-      fill: color, 
+      fill: color,
     };
 
     setActions((prev: Action[]) => [...prev, newArrow]);
@@ -63,8 +65,7 @@ export default function HandleArrow(
         const dy = y2 - y1;
         const length = Math.sqrt(dx * dx + dy * dy);
 
-    
-        if (length < strokeWidth*4) {
+        if (length < strokeWidth * 4) {
           return prev.slice(0, -1);
         }
       }
@@ -82,4 +83,3 @@ export default function HandleArrow(
     stage.off("mouseup", handleMouseUp);
   };
 }
-

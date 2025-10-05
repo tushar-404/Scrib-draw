@@ -1,12 +1,13 @@
 import Konva from "konva";
 import { Dispatch, SetStateAction } from "react";
 import { Action, TextAction } from "../store";
+import { nanoid } from "nanoid";
 
 export default function HandleText(
   stage: Konva.Stage,
   setActions: Dispatch<SetStateAction<Action[]>>,
   color: string,
-  Stroke: number
+  Stroke: number,
 ) {
   const isEditing = { current: false };
   let cursor: Konva.Line | null = null;
@@ -49,6 +50,7 @@ export default function HandleText(
     }, 500);
 
     const newText: TextAction = {
+      id: nanoid(),
       tool: "text",
       x: pos.x,
       y: pos.y,
@@ -105,7 +107,10 @@ export default function HandleText(
 
       layer?.batchDraw();
 
-      const updated: TextAction = { ...(last as TextAction), text: updatedText };
+      const updated: TextAction = {
+        ...(last as TextAction),
+        text: updatedText,
+      };
       return [...prev.slice(0, -1), updated];
     });
   };
