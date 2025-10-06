@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from "jotai";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import {
   Stage,
   Layer,
@@ -33,10 +33,10 @@ import {
   selectedIdsAtom,
   currentLayerAtom,
   finalLayerAtom,
+  StageAtom,
 } from "./store";
 
 import Konva from "konva";
-import { RotateCcw } from "lucide-react";
 
 export default function StageComponent() {
   const [actions, setActions] = useAtom(actionsAtom);
@@ -52,20 +52,21 @@ export default function StageComponent() {
   const [fill] = useAtom(FillAtom);
   const fillEnabled = useAtomValue(FillboolAtom);
   const [currentLayer, setCurrentLayer] = useAtom(currentLayerAtom);
+  const [finalLayer, setFinalLayer] = useAtom(finalLayerAtom);
+  const [, setStageAtom] = useAtom(StageAtom);
 
-  // Update a specific action
   const updateAction = (idx: number, updates: Partial<Action>) => {
     setActions((prev) =>
-      prev.map((a, i) => (i === idx ? { ...a, ...updates } : a)),
+      prev.map((a, i) => (i === idx ? { ...a, ...updates } : a))
     );
   };
 
-  const stableSetActions = useCallback(
-    (updater: Parameters<typeof setActions>[0]) => {
-      setActions(updater);
-    },
-    [setActions],
-  );
+  // Only update StageAtom after render
+  useEffect(() => {
+    if (stageRef.current) {
+      setStageAtom(stageRef.current);
+    }
+  }, [setStageAtom]);
 
   // Keep transformer updated on selection
   useEffect(() => {
@@ -108,45 +109,30 @@ export default function StageComponent() {
 
     switch (tool) {
       case "draw":
-        cleanup = HandleDraw(
-          stageRef.current,
-          stableSetActions,
-          colors.hex,
-          width,
-        );
+        cleanup = HandleDraw(stageRef.current, setActions, colors.hex, width);
         break;
       case "text":
-        cleanup = HandleText(
-          stageRef.current,
-          stableSetActions,
-          colors.hex,
-          width,
-        );
+        cleanup = HandleText(stageRef.current, setActions, colors.hex, width);
         break;
       case "arrow":
-        cleanup = HandleArrow(
-          stageRef.current,
-          stableSetActions,
-          colors.hex,
-          width,
-        );
+        cleanup = HandleArrow(stageRef.current, setActions, colors.hex, width);
         break;
       case "straightline":
         cleanup = HandleStraightLine(
           stageRef.current,
-          stableSetActions,
+          setActions,
           colors.hex,
-          width,
+          width
         );
         break;
       case "square":
         cleanup = HandleSquare(
           stageRef.current,
-          stableSetActions,
+          setActions,
           colors.hex,
           width,
           fill.hex,
-          fillEnabled,
+          fillEnabled
         );
         break;
       case "select":
@@ -164,7 +150,7 @@ export default function StageComponent() {
     return () => cleanup?.();
   }, [
     tool,
-    stableSetActions,
+    setActions,
     colors.hex,
     width,
     selectedIds,
@@ -174,23 +160,17 @@ export default function StageComponent() {
   ]);
 
   // Keep current layer updated
-  const [finalLayer, setFinalLayer] = useAtom(finalLayerAtom);
   useEffect(() => {
     setCurrentLayer((prev) => {
       let updatedLayer = [...prev];
 
       if (actions.length === 0) {
-        // actions empty → push finalLayer if exists
-        if (finalLayer.length > 0) {
-          updatedLayer.push(finalLayer);
-        }
+        if (finalLayer.length > 0) updatedLayer.push(finalLayer);
       } else {
-        // actions non-empty → push actions
         updatedLayer.push(actions);
-        setFinalLayer(actions); // update finalLayer
+        setFinalLayer(actions);
       }
 
-      // always set actions as the current finalLayer
       if (updatedLayer.length > 0) {
         setActions(updatedLayer[updatedLayer.length - 1]);
       }
@@ -202,7 +182,6 @@ export default function StageComponent() {
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     if (!e.evt.ctrlKey) return;
     e.evt.preventDefault();
-
     const stage = stageRef.current;
     if (!stage) return;
 
@@ -220,7 +199,6 @@ export default function StageComponent() {
     const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
     stage.scale({ x: newScale, y: newScale });
-
     stage.position({
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
@@ -237,15 +215,15 @@ export default function StageComponent() {
           tool === "draw"
             ? "crosshair"
             : tool === "pan"
-              ? "grab"
-              : tool === "eraser"
-                ? `url('data:image/svg+xml;utf8,${encodeURIComponent(`
-              <svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40">
-                <rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5"
-                  rx="7" ry="4" transform="rotate(-45 30 20)"/>
-              </svg>
-            `)}') 30 20, auto`
-                : "default",
+            ? "grab"
+            : tool === "eraser"
+            ? `url('data:image/svg+xml;utf8,${encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40">
+            <rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5"
+              rx="7" ry="4" transform="rotate(-45 30 20)"/>
+          </svg>
+        `)}') 30 20, auto`
+            : "default",
       }}
     >
       <Stage
@@ -374,22 +352,7 @@ export default function StageComponent() {
           )}
         </Layer>
       </Stage>
-      {/* Bottom-right Recenter Button */}
-      <div className="fixed bottom-4 right-4 flex items-center gap-2 z-50">
-        <div
-          onClick={() => {
-            if (stageRef.current) {
-              stageRef.current.position({ x: 0, y: 0 });
-              stageRef.current.scale({ x: 1, y: 1 });
-              stageRef.current.batchDraw();
-            }
-          }}
-          className="cursor-pointer flex items-center justify-center p-2 bg-white rounded-lg shadow border-[1px] border-transparent hover:bg-zinc-100 text-zinc-600 active:border-black"
-          title="Recenter Canvas"
-        >
-          <RotateCcw className="w-[10px] h-[10px]" />
-        </div>
-      </div>
     </div>
   );
 }
+

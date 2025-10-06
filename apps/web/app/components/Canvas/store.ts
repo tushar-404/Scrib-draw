@@ -1,5 +1,6 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
 
 // ----- Tool type -----
@@ -95,8 +96,8 @@ export const StageSizeAtom = atom({ width: 0, height: 0 });
 
 export type KonvaMouseEvent = KonvaEventObject<MouseEvent>;
 export type KonvaWheelEvent = KonvaEventObject<WheelEvent>;
-
-// ----- Width -----
+export const StageAtom=atom<Konva.Stage | null>(null)
+// ----- Width ----- 
 export type Width = 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
 export const WidthAtom = atom<Width>(2);
 
