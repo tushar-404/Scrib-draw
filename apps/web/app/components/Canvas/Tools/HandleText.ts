@@ -65,7 +65,7 @@ const HandleText = (
       text: "",
       fill: color,
       fontSize: fontSize,
-      fontFamily: "Arial",
+      fontFamily: "Courier New",
     });
     layer.add(currentTextNode);
 
@@ -81,7 +81,8 @@ const HandleText = (
     }, 500);
   };
 
-  const handleKeyDown = (evt: KeyboardEvent) => {
+ 
+  const handleKeyDown = async (evt: KeyboardEvent) => {
     if (!isEditing || !currentTextNode) return;
 
     evt.preventDefault();
@@ -99,19 +100,30 @@ const HandleText = (
       return;
     }
 
-    let currentText = currentTextNode.text();
-    if (evt.key === "Backspace") {
-      currentText = currentText.slice(0, -1);
+    
+    if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === "v") {
+      try {
+        const pastedText = await navigator.clipboard.readText();
+        if (pastedText) {
+          currentTextNode.text(currentTextNode.text() + pastedText);
+        }
+      } catch (err) {
+        console.error("Failed to read clipboard contents: ", err);
+      }
+    } else if (evt.key === "Backspace") {
+      const currentText = currentTextNode.text();
+      currentTextNode.text(currentText.slice(0, -1));
     } else if (evt.key.length === 1 && !evt.ctrlKey && !evt.metaKey) {
-      currentText += evt.key;
+      currentTextNode.text(currentTextNode.text() + evt.key);
     }
-    currentTextNode.text(currentText);
 
+   
     if (cursor) {
       const newX = currentTextNode.x() + currentTextNode.width();
       const newY = currentTextNode.y();
       cursor.points([newX, newY, newX, newY + currentTextNode.fontSize()]);
 
+  
       cursor.visible(true);
       if (blinkingInterval) clearInterval(blinkingInterval);
       blinkingInterval = setInterval(() => {

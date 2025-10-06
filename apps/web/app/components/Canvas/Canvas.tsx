@@ -309,7 +309,8 @@ export default function StageComponent() {
                     text={textAction.text}
                     fontSize={textAction.fontSize}
                     fill={textAction.fill}
-                    fontFamily="Arial"
+fontFamily="Courier New"
+
                     hitStrokeWidth={isSelected ? 30 : 10}
                     draggable={isSelected && tool === "select"}
                     onDragEnd={(e) =>
