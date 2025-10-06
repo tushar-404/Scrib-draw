@@ -1,14 +1,16 @@
+// Island.tsx
+
 "use client";
 
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
-  actionsAtom,
-  currentLayerAtom,
-  finalLayerAtom,
-  redoAtom,
   StageAtom,
   Tool,
   toolAtom,
+  undoAtom,
+  redoAtom,
+  resetAtom,
+  historyControlsAtom,
 } from "./store";
 import {
   Eraser,
@@ -18,11 +20,11 @@ import {
   MoveRight,
   Minus,
   SquareDashedMousePointer,
-  Undo2,
-  Redo2,
   Square,
   Trash2,
   RotateCcw,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { useCallback, useEffect } from "react";
 
@@ -30,10 +32,30 @@ export default function Island() {
   const [tool, setTool] = useAtom(toolAtom);
   const [stage, setStage] = useAtom(StageAtom);
 
-  const [, setRedoActions] = useAtom(redoAtom);
-  const [, setCurrentLayer] = useAtom(currentLayerAtom);
-  const [, setActions] = useAtom(actionsAtom);
-  const [, setFinalLayer] = useAtom(finalLayerAtom);
+  // Get setters for our actions
+  const undo = useSetAtom(undoAtom);
+  const redo = useSetAtom(redoAtom);
+  const resetCanvas = useSetAtom(resetAtom);
+
+  // Get undo/redo availability state
+  const { canUndo, canRedo } = useAtomValue(historyControlsAtom);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === "z") {
+          e.preventDefault();
+          undo();
+        } else if (e.key === "y" || (e.shiftKey && e.key === "Z")) {
+          e.preventDefault();
+          redo();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
 
   const toolArray = [
     { icon: SquareDashedMousePointer, type: "select" },
@@ -46,59 +68,17 @@ export default function Island() {
     { icon: Eraser, type: "eraser" },
   ];
 
-  const handleUndo = useCallback(() => {
-    setCurrentLayer((prev) => {
-      const last = prev.at(-1);
-      if (!last) return prev;
-      setRedoActions((redoPrev) => [...redoPrev, last]);
-      setActions(last);
-      return prev.slice(0, -1);
-    });
-  }, [setCurrentLayer, setRedoActions, setActions]);
-
-  const handleRedo = useCallback(() => {
-    setRedoActions((prev) => {
-      const last = prev.at(-1);
-      if (!last) return prev;
-      setCurrentLayer((current) => [...current, last]);
-      setActions(last);
-      return prev.slice(0, -1);
-    });
-  }, [setCurrentLayer, setRedoActions, setActions]);
-
-  const resetCanvas = useCallback(() => {
-    setFinalLayer([]);
-    setActions([]);
-    setCurrentLayer([]);
-    setRedoActions([]);
-  }, [setFinalLayer, setActions, setCurrentLayer, setRedoActions]);
-
   const handleRecenter = useCallback(() => {
-    if (stage) {
-      stage.position({ x: 0, y: 0 });
-      stage.scale({ x: 1, y: 1 });
-      stage.batchDraw();
-      setStage(stage);
-    }
+    if (!stage) return;
+    stage.position({ x: 0, y: 0 });
+    stage.scale({ x: 1, y: 1 });
+    stage.batchDraw();
+    setStage(stage);
   }, [stage, setStage]);
 
-  // Ctrl+Z/Y key bindings
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-        e.preventDefault();
-        handleUndo();
-      } else if (
-        (e.ctrlKey || e.metaKey) &&
-        (e.key === "y" || (e.shiftKey && e.key === "Z"))
-      ) {
-        e.preventDefault();
-        handleRedo();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleUndo, handleRedo]);
+  const baseButtonClass =
+    "cursor-pointer flex items-center justify-center p-2 rounded-md border-[1px] border-transparent active:border-black hover:bg-zinc-100 text-zinc-600";
+  const disabledButtonClass = "opacity-50 cursor-not-allowed";
 
   return (
     <>
@@ -113,39 +93,36 @@ export default function Island() {
               tool === type ? "bg-[#E0DFFF]" : "hover:bg-zinc-100 text-zinc-600"
             }`}
           >
-            <Icon className="w-[7px] h-[7px]" />
+            <Icon className="w-[10px] h-[12px]" strokeWidth={1.5}/>
           </div>
         ))}
       </div>
 
-      {/* Bottom-left combined controls */}
+      {/* Bottom-left controls */}
       <div className="fixed bottom-4 left-4 flex items-center gap-2 z-50 bg-white p-[2px] rounded-lg shadow border-[1px] border-transparent">
         {/* Undo */}
         <div
-          onClick={handleUndo}
-          className="cursor-pointer rounded-md p-2 border-[1px] border-transparent active:border-black hover:bg-zinc-100 text-zinc-600"
+          onClick={canUndo ? undo : undefined}
+          className={`${baseButtonClass} ${!canUndo && disabledButtonClass}`}
           title="Undo"
         >
           <Undo2 className="w-[10px] h-[10px]" />
         </div>
 
-        <span className="border-l border-zinc-300 h-6"></span>
-
         {/* Redo */}
         <div
-          onClick={handleRedo}
-          className="cursor-pointer rounded-md p-2 border-[1px] border-transparent active:border-black hover:bg-zinc-100 text-zinc-600"
+          onClick={canRedo ? redo : undefined}
+          className={`${baseButtonClass} ${!canRedo && disabledButtonClass}`}
           title="Redo"
         >
           <Redo2 className="w-[10px] h-[10px]" />
         </div>
 
         <span className="border-l border-zinc-300 h-6"></span>
-
         {/* Recenter */}
         <div
           onClick={handleRecenter}
-          className="cursor-pointer flex items-center justify-center p-2 rounded-md border-[1px] border-transparent active:border-black hover:bg-zinc-100 text-zinc-600"
+          className={baseButtonClass}
           title="Recenter Canvas"
         >
           <RotateCcw className="w-[10px] h-[10px]" />
@@ -157,7 +134,7 @@ export default function Island() {
         <div
           onClick={resetCanvas}
           title="Reset Canvas"
-          className="cursor-pointer flex items-center justify-center p-2 rounded-md border-[1px] border-transparent active:border-black hover:bg-zinc-100 text-zinc-600"
+          className={baseButtonClass}
         >
           <Trash2 className="w-[10px] h-[10px]" />
         </div>
@@ -165,4 +142,3 @@ export default function Island() {
     </>
   );
 }
-

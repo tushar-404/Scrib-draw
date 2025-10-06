@@ -1,84 +1,106 @@
 import Konva from "konva";
-import { Dispatch, SetStateAction } from "react";
-import { Action, SquareAction, Width } from "../store";
 import { nanoid } from "nanoid";
+import { Action, SquareAction } from "../store";
 
-export default function HandleSquare(
+const HandleSquare = (
   stage: Konva.Stage,
-  setActions: Dispatch<SetStateAction<Action[]>>,
+  recordAction: (updater: (prev: Action[]) => Action[]) => void,
   color: string,
-  strokeWidth: Width,
+  strokeWidth: number,
   fill: string,
-  fillenabled: boolean,
-) {
-  const isDrawing = { current: false };
-  const startPos = { current: { x: 0, y: 0 } };
+  fillEnabled: boolean,
+  opacityValue: number,
+): (() => void) => {
+  let isDrawing = false;
+  let currentRect: Konva.Rect | null = null;
+  let startPos: { x: number; y: number } | null = null;
 
   const handleMouseDown = () => {
+    isDrawing = true;
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
-    isDrawing.current = true;
-    startPos.current = pos;
+    startPos = pos;
 
-    const newSquare: SquareAction = {
-      id: nanoid(),
-      tool: "square",
+    currentRect = new Konva.Rect({
       x: pos.x,
       y: pos.y,
       width: 0,
       height: 0,
       stroke: color,
       strokeWidth: strokeWidth,
-      fill: fillenabled ? fill : "",
-    };
+      fill: fillEnabled ? fill : "",
+      cornerRadius: 10,
+      opacity: opacityValue,
+    });
 
-    setActions((prev: Action[]) => [...prev, newSquare]);
+    stage.findOne("Layer")?.add(currentRect);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchend", handleMouseUp);
   };
 
   const handleMouseMove = () => {
-    if (!isDrawing.current) return;
+    if (!isDrawing || !currentRect || !startPos) return;
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
-    setActions((prev: Action[]) => {
-      const last = prev[prev.length - 1];
-      if (last && last.tool === "square") {
-        const updated: SquareAction = {
-          ...last,
-          x: Math.min(startPos.current.x, pos.x),
-          y: Math.min(startPos.current.y, pos.y),
-          width: Math.abs(pos.x - startPos.current.x),
-          height: Math.abs(pos.y - startPos.current.y),
-        };
-        return [...prev.slice(0, -1), updated];
-      }
-      return prev;
+    const newX = Math.min(startPos.x, pos.x);
+    const newY = Math.min(startPos.y, pos.y);
+    const newWidth = Math.abs(pos.x - startPos.x);
+    const newHeight = Math.abs(pos.y - startPos.y);
+
+    currentRect.setAttrs({
+      x: newX,
+      y: newY,
+      width: newWidth,
+      height: newHeight,
     });
   };
 
   const handleMouseUp = () => {
-    if (!isDrawing.current) return;
-    isDrawing.current = false;
+    window.removeEventListener("mouseup", handleMouseUp);
+    window.removeEventListener("touchend", handleMouseUp);
+    
+    if (!isDrawing || !currentRect) return;
+    isDrawing = false;
 
-    setActions((prev: Action[]) => {
-      const last = prev[prev.length - 1];
-      if (last && last.tool === "square") {
-        if (last.width < 5 || last.height < 5) {
-          return prev.slice(0, -1);
-        }
-      }
-      return prev;
-    });
+    const width = currentRect.width();
+    const height = currentRect.height();
+
+    if (width < 5 && height < 5) {
+      currentRect.destroy();
+      currentRect = null;
+      return;
+    }
+
+    recordAction((prevActions) => [
+      ...prevActions,
+      {
+        id: nanoid(),
+        tool: "square",
+        x: currentRect.x(),
+        y: currentRect.y(),
+        width: width,
+        height: height,
+        stroke: color,
+        strokeWidth: strokeWidth,
+        fill: fillEnabled ? fill : "",
+        opacity: opacityValue,
+      } as SquareAction,
+    ]);
+
+    currentRect.destroy();
+    currentRect = null;
   };
 
-  stage.on("mousedown", handleMouseDown);
-  stage.on("mousemove", handleMouseMove);
-  stage.on("mouseup", handleMouseUp);
+  stage.on("mousedown.square touchstart.square", handleMouseDown);
+  stage.on("mousemove.square touchmove.square", handleMouseMove);
 
   return () => {
-    stage.off("mousedown", handleMouseDown);
-    stage.off("mousemove", handleMouseMove);
-    stage.off("mouseup", handleMouseUp);
+    stage.off(".square");
+    window.removeEventListener("mouseup", handleMouseUp);
+    window.removeEventListener("touchend", handleMouseUp);
   };
-}
+};
+
+export default HandleSquare;

@@ -1,82 +1,87 @@
 import Konva from "konva";
-import { Dispatch, SetStateAction } from "react";
-import { Action, StraightLineAction, Width } from "../store";
 import { nanoid } from "nanoid";
+import { Action, StraightLineAction } from "../store";
 
-export default function HandleStraightLine(
+const HandleStraightLine = (
   stage: Konva.Stage,
-  setActions: Dispatch<SetStateAction<Action[]>>,
+  recordAction: (updater: (prev: Action[]) => Action[]) => void,
   color: string,
-  strokeWidth: Width,
-) {
-  const isDrawing = { current: false };
-  const startPos = { current: { x: 0, y: 0 } };
+  strokeWidth: number,
+): (() => void) => {
+  let isDrawing = false;
+  let currentLine: Konva.Line | null = null;
 
   const handleMouseDown = () => {
+    isDrawing = true;
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
-    isDrawing.current = true;
-    startPos.current = pos;
-
-    const newLine: StraightLineAction = {
-      id: nanoid(),
-      tool: "straightline",
+    currentLine = new Konva.Line({
       points: [pos.x, pos.y, pos.x, pos.y],
       stroke: color,
       strokeWidth: strokeWidth,
-    };
+      lineCap: "round",
+      lineJoin: "round",
+    });
 
-    setActions((prev: Action[]) => [...prev, newLine]);
+    stage.findOne("Layer")?.add(currentLine);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchend", handleMouseUp);
   };
 
   const handleMouseMove = () => {
-    if (!isDrawing.current) return;
+    if (!isDrawing || !currentLine) return;
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
-    setActions((prev: Action[]) => {
-      const last = prev[prev.length - 1];
-      if (last && last.tool === "straightline") {
-        const lineLast = last as StraightLineAction;
-        const updated: StraightLineAction = {
-          ...lineLast,
-          points: [startPos.current.x, startPos.current.y, pos.x, pos.y],
-        };
-        return [...prev.slice(0, -1), updated];
-      }
-      return prev;
-    });
+    const startPoints = currentLine.points();
+    const newPoints = [startPoints[0], startPoints[1], pos.x, pos.y];
+    currentLine.points(newPoints);
+    currentLine.getLayer()?.batchDraw();
   };
 
   const handleMouseUp = () => {
-    if (!isDrawing.current) return;
-    isDrawing.current = false;
+    window.removeEventListener("mouseup", handleMouseUp);
+    window.removeEventListener("touchend", handleMouseUp);
 
-    setActions((prev: Action[]) => {
-      const last = prev[prev.length - 1];
-      if (last && last.tool === "straightline") {
-        const lineLast = last as StraightLineAction;
-        const [x1, y1, x2, y2] = lineLast.points;
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const length = Math.sqrt(dx * dx + dy * dy);
+    if (!isDrawing || !currentLine) return;
+    isDrawing = false;
 
-        if (length < strokeWidth * 4) {
-          return prev.slice(0, -1);
-        }
-      }
-      return prev;
-    });
+    const finalPoints = currentLine.points();
+    const [x1, y1, x2, y2] = finalPoints;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.sqrt(dx * dx + dy * dy);
+
+    if (length < strokeWidth * 2) {
+      currentLine.destroy();
+      currentLine = null;
+      return;
+    }
+
+    recordAction((prevActions) => [
+      ...prevActions,
+      {
+        id: nanoid(),
+        tool: "straightline",
+        points: finalPoints,
+        stroke: color,
+        strokeWidth: strokeWidth,
+      } as StraightLineAction,
+    ]);
+
+    currentLine.destroy();
+    currentLine = null;
   };
 
-  stage.on("mousedown", handleMouseDown);
-  stage.on("mousemove", handleMouseMove);
-  stage.on("mouseup", handleMouseUp);
+  stage.on("mousedown.straightline touchstart.straightline", handleMouseDown);
+  stage.on("mousemove.straightline touchmove.straightline", handleMouseMove);
 
   return () => {
-    stage.off("mousedown", handleMouseDown);
-    stage.off("mousemove", handleMouseMove);
-    stage.off("mouseup", handleMouseUp);
+    stage.off(".straightline");
+    window.removeEventListener("mouseup", handleMouseUp);
+    window.removeEventListener("touchend", handleMouseUp);
   };
-}
+};
+
+export default HandleStraightLine;

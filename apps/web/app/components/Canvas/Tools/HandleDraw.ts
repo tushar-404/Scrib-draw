@@ -1,62 +1,87 @@
-//handleDraw
 import Konva from "konva";
-import { Dispatch, SetStateAction } from "react";
-import { Action, Width } from "../store";
-import { nanoid } from "nanoid";
+import { v4 as uuidv4 } from "uuid";
+import { Action } from "../store";
 
-export default function HandleDraw(
+const HandleDraw = (
   stage: Konva.Stage,
-  setActions: Dispatch<SetStateAction<Action[]>>,
+  recordAction: (updater: (prev: Action[]) => Action[]) => void,
   color: string,
-  strokeWidth: Width,
-) {
-  const isDrawing = { current: false };
-  const lastLinePoints = { current: [] as number[] };
+  width: number,
+): (() => void) => {
+  let isDrawing = false;
+  let currentLine: Konva.Line | null = null;
+
   const handleMouseDown = () => {
-    isDrawing.current = true;
+    isDrawing = true;
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
-    lastLinePoints.current = [pos.x, pos.y];
+    currentLine = new Konva.Line({
+      stroke: color,
+      strokeWidth: width,
+      globalCompositeOperation: "source-over",
+      lineCap: "round",
+      lineJoin: "round",
+      points: [pos.x, pos.y, pos.x, pos.y],
+    });
+    
+    stage.findOne("Layer")?.add(currentLine);
 
-    setActions((prev: Action[]) => [
-      ...prev,
-      {
-        id:nanoid(),
-        tool: "draw",
-        points: lastLinePoints.current,
-        stroke: color,
-        strokeWidth: strokeWidth,
-      },
-    ]);
+  
+    window.addEventListener("mouseup", handleMouseUp);
   };
 
   const handleMouseMove = () => {
-    if (!isDrawing.current) return;
+    if (!isDrawing || !currentLine) {
+      return;
+    }
+
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
-
-    setActions((prev: Action[]) => {
-      const last = prev[prev.length - 1];
-      if (last && last.tool === "draw") {
-        const updated = { ...last, points: [...last.points, pos.x, pos.y] };
-        return [...prev.slice(0, -1), updated];
-      }
-      return prev;
-    });
+    
+    const newPoints = currentLine.points().concat([pos.x, pos.y]);
+    currentLine.points(newPoints);
   };
 
   const handleMouseUp = () => {
-    isDrawing.current = false;
+ 
+    window.removeEventListener("mouseup", handleMouseUp);
+
+    if (!isDrawing || !currentLine) {
+      return;
+    }
+    isDrawing = false;
+
+    const finalPoints = currentLine.points();
+
+  
+    if (finalPoints.length > 2) {
+        recordAction((prevActions) => [
+          ...prevActions,
+          {
+            id: uuidv4(),
+            tool: "draw",
+            points: finalPoints,
+            stroke: color,
+            strokeWidth: width,
+          },
+        ]);
+    }
+    
+    currentLine.destroy();
+    currentLine = null;
   };
 
-  stage.on("mousedown", handleMouseDown);
-  stage.on("mousemove", handleMouseMove);
-  stage.on("mouseup", handleMouseUp);
+  
+  stage.on("mousedown.draw touchstart.draw", handleMouseDown);
+  stage.on("mousemove.draw touchmove.draw", handleMouseMove);
 
   return () => {
-    stage.off("mousedown", handleMouseDown);
-    stage.off("mousemove", handleMouseMove);
-    stage.off("mouseup", handleMouseUp);
+    stage.off("mousedown.draw touchstart.draw");
+    stage.off("mousemove.draw touchmove.draw");
+   
+    window.removeEventListener("mouseup", handleMouseUp);
   };
-}
+};
+
+export default HandleDraw;

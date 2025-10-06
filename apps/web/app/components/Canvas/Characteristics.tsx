@@ -3,95 +3,167 @@ import { useAtom } from "jotai";
 import {
   ColorAtom,
   FillAtom,
-  ShowSideBarAtom,
   WidthAtom,
+  ShowSideBarAtom,
+  opacityatom,
   FillboolAtom,
 } from "./store";
-import { Palette } from "lucide-react";
+import { Palette, Slash } from "lucide-react"; 
+
+const STROKE_WIDTHS = [
+  { value: 2, size: 3, label: "Fine" },
+  { value: 5, size: 6, label: "Medium" },
+  { value: 8, size: 9, label: "Bold" },
+  { value: 12, size: 12, label: "Extra Bold" },
+];
 
 export default function CharacteristicsIsland() {
   const [colors, setColors] = useAtom(ColorAtom);
   const [fill, setFill] = useAtom(FillAtom);
   const [width, setWidth] = useAtom(WidthAtom);
-  const [showPalette, setShowPalette] = useAtom(ShowSideBarAtom);
-  const [fillEnabled, setFillEnabled] = useAtom(FillboolAtom);
+  const [isSidebarVisible, setIsSidebarVisible] = useAtom(ShowSideBarAtom);
+  const [opacity, setOpacity] = useAtom(opacityatom);
+  const [fillenabled, setFillenabled] = useAtom(FillboolAtom);
 
   return (
-    <div className="fixed m-4 flex flex-col items-start space-y-2 font-minefont ">
-      {/* Palette Icon */}
-      <div className="flex items-center space-x-2">
-        <Palette
-          color={colors.hex}
-          onClick={() => setShowPalette(!showPalette)}
-          className="cursor-pointer shadow border border-transparent rounded-lg bg-white p-1"
-        />
-      </div>
+    <div className="fixed left-4 top-4 z-50 flex flex-col items-start gap-2">
+      <button
+        onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+        className="flex h-8 w-8 items-center justify-center rounded-lg bg-white p-2 shadow-lg transition-all cursor-pointer"
+        title="Toggle Properties"
+      >
+        <Palette color={colors.hex} size={20} />
+      </button>
 
-      {/* Sidebar panel */}
-      {showPalette && (
+      {isSidebarVisible && (
         <div
-          className="bg-white shadow-lg rounded-lg p-4 w-44 z-50 flex flex-col space-y-4"
+          className="z-50 flex w-48 flex-col gap-3 rounded-lg bg-white p-3 font-sans shadow-xl"
           onMouseDown={(e) => e.stopPropagation()}
         >
-          {/* Stroke Color */}
-          <div className="flex items-center justify-between space-x-2">
-            <span className="text-xs">Stroke Color</span>
-            <input
-              type="color"
-              value={colors.hex}
-              onChange={(e) => setColors({ hex: e.target.value })}
-              className="w-6 h-6 cursor-pointer border border-gray-300 p-0"
-              style={{ padding: 0, borderRadius: "4px" }}
-            />
+          {/* --- Stroke Properties --- */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase text-gray-500">
+              Stroke
+            </h3>
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-800">Color</label>
+              <label
+                htmlFor="stroke-color-picker"
+                className="relative h-6 w-6 cursor-pointer rounded-md border border-gray-200"
+                style={{ backgroundColor: colors.hex }}
+              >
+                <input
+                  id="stroke-color-picker"
+                  type="color"
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  value={colors.hex}
+                  onChange={(e) => setColors({ hex: e.target.value })}
+                />
+              </label>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-800">Width</label>
+              <div className="flex w-full items-center justify-between rounded-md bg-gray-100 p-0.5">
+                {STROKE_WIDTHS.map(({ value, size, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => setWidth(value)}
+                    className={`flex h-7 flex-1 items-center justify-center rounded ${
+                      width === value
+                        ? "bg-white shadow-sm"
+                        : "hover:bg-gray-200"
+                    }`}
+                    title={label}
+                  >
+                    <div
+                      className="rounded-full bg-gray-800"
+                      style={{ height: `${size}px`, width: `${size}px` }}
+                    ></div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-   {/* Fill Toggle */}
-<div className="flex items-center justify-between space-x-2">
-  <span className="text-xs">Enable Fill</span>
-  <label className="relative inline-flex items-center cursor-pointer w-8 h-4">
-    <input
-      type="checkbox"
-      checked={fillEnabled}
-      onChange={() => setFillEnabled(!fillEnabled)}
-      className="sr-only peer"
-    />
-    {/* Track */}
-    <div
-      className="w-8 h-4 rounded-full transition-all"
-      style={{
-        backgroundColor: fillEnabled ? fill.hex : "#e5e7eb", // gray when off, fill color when on
-      }}
-    ></div>
-    {/* Knob */}
-    <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow-md transform peer-checked:translate-x-4 transition-all"></div>
-  </label>
-</div>
 
-          {/* Fill Color */}
-          <div className="flex items-center justify-between space-x-2">
-            <span className="text-xs">Fill Color</span>
-            <input
-              type="color"
-              value={fill.hex}
-              onChange={(e) => setFill({ hex: e.target.value })}
-              className="w-6 h-6 cursor-pointer border border-gray-300 p-0"
-              style={{ padding: 0, borderRadius: "4px" }}
-              disabled={!fillEnabled} // disable if toggle is off
-            />
-          </div>
+          <hr className="border-gray-200" />
 
-          {/* Stroke Width */}
-          <div className="flex flex-col">
-            <label className="text-xs mb-1">Stroke Width</label>
-            <input
-              type="range"
-              min={1}
-              max={10}
-              step={1}
-              value={width}
-              onChange={(e) => setWidth(Number(e.target.value))}
-              className="w-full h-1 bg-gray-200 rounded cursor-pointer"
-              style={{ accentColor: colors.hex }}
-            />
+          {/* --- Fill Properties --- */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase text-gray-500">
+              Fill
+            </h3>
+            {/* Fill Color */}
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-800">Color</label>
+              <div className="flex items-center gap-1.5">
+                {/* --- NO FILL BUTTON --- */}
+                <button
+                  onClick={() => setFillenabled(false)}
+                  title="No Fill"
+                  className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors ${
+                    !fillenabled
+                      ? "border-blue-500 bg-blue-100"
+                      : "border-gray-300 bg-transparent hover:bg-gray-100"
+                  }`}
+                >
+                  <Slash
+                    size={16}
+                    className={`transition-colors ${
+                      !fillenabled ? "text-blue-600" : "text-gray-500"
+                    }`}
+                  />
+                </button>
+
+                {/* --- COLOR PICKER SWATCH --- */}
+                <label
+                  htmlFor="fill-color-picker"
+                  onClick={() => setFillenabled(true)}
+                  className={`relative h-6 w-6 cursor-pointer rounded-md border-2 ${
+                    fillenabled ? "border-blue-500" : "border-gray-300"
+                  }`}
+                  style={{ backgroundColor: fill.hex }}
+                >
+                  <input
+                    id="fill-color-picker"
+                    type="color"
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    value={fill.hex}
+                    onChange={(e) => {
+                      setFillenabled(true);
+                      setFill({ hex: e.target.value });
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Opacity Slider */}
+            <div>
+              <div className="mt-1 flex items-center justify-between">
+                <label
+                  className={`text-xs transition-colors ${
+                    !fillenabled ? "text-gray-400" : "text-gray-800"
+                  }`}
+                >
+                  Opacity
+                </label>
+                <span
+                  className={`text-xs font-medium transition-colors ${
+                    !fillenabled ? "text-gray-400" : "text-gray-500"
+                  }`}
+                ></span>
+              </div>
+              <input
+                type="range"
+                min={0.1}
+                max={1}
+                step={0.05}
+                value={opacity}
+                onChange={(e) => setOpacity(Number(e.target.value))}
+                disabled={!fillenabled}
+                className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-blue-600 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
           </div>
         </div>
       )}

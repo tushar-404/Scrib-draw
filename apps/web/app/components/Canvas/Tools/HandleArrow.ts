@@ -1,85 +1,96 @@
 import Konva from "konva";
-import { Dispatch, SetStateAction } from "react";
-import { Action, ArrowAction, Width } from "../store";
 import { nanoid } from "nanoid";
+import { Action, ArrowAction } from "../store";
 
-export default function HandleArrow(
+const HandleArrow = (
   stage: Konva.Stage,
-  setActions: Dispatch<SetStateAction<Action[]>>,
+  recordAction: (updater: (prev: Action[]) => Action[]) => void,
   color: string,
-  strokeWidth: Width,
-) {
-  const isDrawing = { current: false };
-  const startPos = { current: { x: 0, y: 0 } };
+  strokeWidth: number,
+): (() => void) => {
+  let isDrawing = false;
+  let currentArrow: Konva.Arrow | null = null;
 
   const handleMouseDown = () => {
+    isDrawing = true;
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
-    isDrawing.current = true;
-    startPos.current = pos;
-
-    const newArrow: ArrowAction = {
-      id: nanoid(),
-      tool: "arrow",
+    currentArrow = new Konva.Arrow({
       points: [pos.x, pos.y, pos.x, pos.y],
       stroke: color,
       strokeWidth: strokeWidth,
+      lineCap: "round",
+      lineJoin : "round",
+      fill: color,
       pointerLength: strokeWidth * 4,
       pointerWidth: strokeWidth * 3,
-      fill: color,
-    };
+    });
 
-    setActions((prev: Action[]) => [...prev, newArrow]);
+    stage.findOne("Layer")?.add(currentArrow);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchend", handleMouseUp);
   };
 
   const handleMouseMove = () => {
-    if (!isDrawing.current) return;
+    if (!isDrawing || !currentArrow) return;
+
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
 
-    setActions((prev: Action[]) => {
-      const last = prev[prev.length - 1];
-      if (last && last.tool === "arrow") {
-        const arrowLast = last as ArrowAction;
-        const updated: ArrowAction = {
-          ...arrowLast,
-          points: [startPos.current.x, startPos.current.y, pos.x, pos.y],
-        };
-        return [...prev.slice(0, -1), updated];
-      }
-      return prev;
-    });
+    const startPoints = currentArrow.points();
+    const newPoints = [startPoints[0], startPoints[1], pos.x, pos.y];
+    currentArrow.points(newPoints);
+
+    // This is the fix: Use batchDraw for better performance
+    currentArrow.getLayer()?.batchDraw();
   };
 
   const handleMouseUp = () => {
-    if (!isDrawing.current) return;
-    isDrawing.current = false;
+    window.removeEventListener("mouseup", handleMouseUp);
+    window.removeEventListener("touchend", handleMouseUp);
 
-    setActions((prev: Action[]) => {
-      const last = prev[prev.length - 1];
-      if (last && last.tool === "arrow") {
-        const arrowLast = last as ArrowAction;
-        const [x1, y1, x2, y2] = arrowLast.points;
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const length = Math.sqrt(dx * dx + dy * dy);
+    if (!isDrawing || !currentArrow) return;
+    isDrawing = false;
 
-        if (length < strokeWidth * 4) {
-          return prev.slice(0, -1);
-        }
-      }
-      return prev;
-    });
+    const finalPoints = currentArrow.points();
+    const [x1, y1, x2, y2] = finalPoints;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.sqrt(dx * dx + dy * dy);
+
+    if (length < strokeWidth * 4) {
+      currentArrow.destroy();
+      currentArrow = null;
+      return;
+    }
+
+    recordAction((prevActions) => [
+      ...prevActions,
+      {
+        id: nanoid(),
+        tool: "arrow",
+        points: finalPoints,
+        stroke: color,
+        strokeWidth: strokeWidth,
+        fill: color,
+        pointerLength: strokeWidth * 4,
+        pointerWidth: strokeWidth * 3,
+      } as ArrowAction,
+    ]);
+
+    currentArrow.destroy();
+    currentArrow = null;
   };
 
-  stage.on("mousedown", handleMouseDown);
-  stage.on("mousemove", handleMouseMove);
-  stage.on("mouseup", handleMouseUp);
+  stage.on("mousedown.arrow touchstart.arrow", handleMouseDown);
+  stage.on("mousemove.arrow touchmove.arrow", handleMouseMove);
 
   return () => {
-    stage.off("mousedown", handleMouseDown);
-    stage.off("mousemove", handleMouseMove);
-    stage.off("mouseup", handleMouseUp);
+    stage.off(".arrow");
+    window.removeEventListener("mouseup", handleMouseUp);
+    window.removeEventListener("touchend", handleMouseUp);
   };
-}
+};
+
+export default HandleArrow;

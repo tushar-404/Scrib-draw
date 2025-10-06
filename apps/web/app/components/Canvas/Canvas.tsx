@@ -1,5 +1,7 @@
-import { useAtom, useAtomValue } from "jotai";
-import { useEffect, useRef } from "react";
+"use client";
+
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useEffect, useRef, useCallback } from "react";
 import {
   Stage,
   Layer,
@@ -9,6 +11,7 @@ import {
   Transformer,
   Rect,
 } from "react-konva";
+import Konva from "konva";
 
 import HandleDraw from "./Tools/HandleDraw";
 import HandleText from "./Tools/HandleText";
@@ -29,17 +32,15 @@ import {
   WidthAtom,
   ShowSideBarAtom,
   FillAtom,
-  FillboolAtom,
   selectedIdsAtom,
-  currentLayerAtom,
-  finalLayerAtom,
   StageAtom,
+  recordActionAtom,
+  opacityatom,
+  FillboolAtom,
 } from "./store";
 
-import Konva from "konva";
-
 export default function StageComponent() {
-  const [actions, setActions] = useAtom(actionsAtom);
+  const [actions] = useAtom(actionsAtom);
   const [tool] = useAtom(toolAtom);
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
@@ -50,40 +51,36 @@ export default function StageComponent() {
   const [, setShowSidebar] = useAtom(ShowSideBarAtom);
   const [selectedIds, setSelectedIds] = useAtom(selectedIdsAtom);
   const [fill] = useAtom(FillAtom);
-  const fillEnabled = useAtomValue(FillboolAtom);
-  const [currentLayer, setCurrentLayer] = useAtom(currentLayerAtom);
-  const [finalLayer, setFinalLayer] = useAtom(finalLayerAtom);
   const [, setStageAtom] = useAtom(StageAtom);
+  const opacityy = useAtomValue(opacityatom);
+  const recordAction = useSetAtom(recordActionAtom);
+  const fillEnabled = useAtomValue(FillboolAtom);
+  const updateAction = useCallback(
+    (idx: number, updates: Partial<Action>) => {
+      recordAction((prev) =>
+        prev.map((a, i) => (i === idx ? { ...a, ...updates } : a)),
+      );
+    },
+    [recordAction],
+  );
 
-  const updateAction = (idx: number, updates: Partial<Action>) => {
-    setActions((prev) =>
-      prev.map((a, i) => (i === idx ? { ...a, ...updates } : a))
-    );
-  };
-
-  // Only update StageAtom after render
   useEffect(() => {
-    if (stageRef.current) {
-      setStageAtom(stageRef.current);
-    }
+    if (stageRef.current) setStageAtom(stageRef.current);
   }, [setStageAtom]);
 
-  // Keep transformer updated on selection
   useEffect(() => {
     if (tool !== "select" || !trRef.current || !stageRef.current) {
       trRef.current?.nodes([]);
       return;
     }
-
     const nodes = selectedIds
-      .map((id) => stageRef.current?.findOne("#" + id))
+      .map((id) => stageRef.current?.findOne("#" + id!))
       .filter((node): node is Konva.Node => !!node);
 
     trRef.current.nodes(nodes);
     trRef.current.getLayer()?.batchDraw();
   }, [selectedIds, tool]);
 
-  // Resize stage dynamically
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -98,41 +95,44 @@ export default function StageComponent() {
     return () => window.removeEventListener("resize", updateSize);
   }, [setStageSize]);
 
-  // Tool handlers
   useEffect(() => {
     if (!stageRef.current) return;
     let cleanup: (() => void) | undefined;
 
-    if (tool !== "select" && trRef.current) {
-      trRef.current.nodes([]);
-    }
+    if (tool !== "select" && trRef.current) trRef.current.nodes([]);
 
     switch (tool) {
       case "draw":
-        cleanup = HandleDraw(stageRef.current, setActions, colors.hex, width);
+        cleanup = HandleDraw(stageRef.current, recordAction, colors.hex, width);
         break;
       case "text":
-        cleanup = HandleText(stageRef.current, setActions, colors.hex, width);
+        cleanup = HandleText(stageRef.current, recordAction, colors.hex, width);
         break;
       case "arrow":
-        cleanup = HandleArrow(stageRef.current, setActions, colors.hex, width);
+        cleanup = HandleArrow(
+          stageRef.current,
+          recordAction,
+          colors.hex,
+          width,
+        );
         break;
       case "straightline":
         cleanup = HandleStraightLine(
           stageRef.current,
-          setActions,
+          recordAction,
           colors.hex,
-          width
+          width,
         );
         break;
       case "square":
         cleanup = HandleSquare(
           stageRef.current,
-          setActions,
+          recordAction,
           colors.hex,
           width,
           fill.hex,
-          fillEnabled
+          fillEnabled,
+          opacityy,
         );
         break;
       case "select":
@@ -143,41 +143,22 @@ export default function StageComponent() {
         });
         break;
       case "eraser":
-        cleanup = HandleEraser({ stage: stageRef.current });
+        cleanup = HandleEraser({ stage: stageRef.current, recordAction });
         break;
     }
 
     return () => cleanup?.();
   }, [
     tool,
-    setActions,
+    recordAction,
     colors.hex,
     width,
     selectedIds,
     setSelectedIds,
     fill,
     fillEnabled,
+    opacityy,
   ]);
-
-  // Keep current layer updated
-  useEffect(() => {
-    setCurrentLayer((prev) => {
-      let updatedLayer = [...prev];
-
-      if (actions.length === 0) {
-        if (finalLayer.length > 0) updatedLayer.push(finalLayer);
-      } else {
-        updatedLayer.push(actions);
-        setFinalLayer(actions);
-      }
-
-      if (updatedLayer.length > 0) {
-        setActions(updatedLayer[updatedLayer.length - 1]);
-      }
-
-      return updatedLayer;
-    });
-  }, [actions, setCurrentLayer, finalLayer, setFinalLayer, setActions]);
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     if (!e.evt.ctrlKey) return;
@@ -215,15 +196,15 @@ export default function StageComponent() {
           tool === "draw"
             ? "crosshair"
             : tool === "pan"
-            ? "grab"
-            : tool === "eraser"
-            ? `url('data:image/svg+xml;utf8,${encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40">
-            <rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5"
-              rx="7" ry="4" transform="rotate(-45 30 20)"/>
-          </svg>
-        `)}') 30 20, auto`
-            : "default",
+              ? "grab"
+              : tool === "eraser"
+                ? `url('data:image/svg+xml;utf8,${encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40">
+                      <rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5"
+                        rx="7" ry="4" transform="rotate(-45 30 20)"/>
+                    </svg>
+                  `)}') 30 20, auto`
+                : "default",
       }}
     >
       <Stage
@@ -235,9 +216,8 @@ export default function StageComponent() {
         draggable={tool === "pan"}
       >
         <Layer>
-          {finalLayer.map((action, i) => {
-            const isSelected = selectedIds.includes(action.id);
-
+          {actions.map((action, i) => {
+            const isSelected = selectedIds.includes(action.id!);
             switch (action.tool) {
               case "draw":
               case "straightline":
@@ -295,7 +275,10 @@ export default function StageComponent() {
                     cornerRadius={10}
                     stroke={action.stroke}
                     strokeWidth={action.strokeWidth}
-                    fill={action.fill || ""}
+                    fill={action.fill}
+                    fillEnabled={true}
+                    // only square has opacity
+                    opacity={action.opacity}
                     draggable={isSelected && tool === "select"}
                     onDragEnd={(e) =>
                       updateAction(i, { x: e.target.x(), y: e.target.y() })
@@ -345,7 +328,7 @@ export default function StageComponent() {
               borderStroke="blue"
               borderDash={[6, 4]}
               borderStrokeWidth={1}
-              anchorStroke="blue"
+              anchorStroke="#CBDFEC"
               anchorFill="white"
               anchorSize={6}
             />
@@ -355,4 +338,3 @@ export default function StageComponent() {
     </div>
   );
 }
-
