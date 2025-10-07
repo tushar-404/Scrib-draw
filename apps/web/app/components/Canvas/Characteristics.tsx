@@ -37,7 +37,7 @@ export default function CharacteristicsIsland() {
 
       {isSidebarVisible && (
         <div
-          className="z-50 flex w-48 flex-col gap-3 rounded-lg bg-white p-3 font-sans shadow-xl"
+          className="z-50 flex w-48 flex-col gap-3 rounded-lg bg-white p-3 font-minefont shadow-xl"
           onMouseDown={(e) => e.stopPropagation()}
         >
           {/* --- Stroke Properties --- */}

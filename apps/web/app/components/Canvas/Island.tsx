@@ -25,6 +25,8 @@ import {
   RotateCcw,
   Undo2,
   Redo2,
+  Circle,
+  Image,
 } from "lucide-react";
 import { useCallback, useEffect } from "react";
 
@@ -61,10 +63,12 @@ export default function Island() {
     { icon: SquareDashedMousePointer, type: "select" },
     { icon: Hand, type: "pan" },
     { icon: Square, type: "square" },
+    { icon: Circle, type: "circle" },
     { icon: MoveRight, type: "arrow" },
     { icon: Minus, type: "straightline" },
     { icon: Pen, type: "draw" },
     { icon: Type, type: "text" },
+    { icon: Image, type: "image" },
     { icon: Eraser, type: "eraser" },
   ];
 
@@ -93,7 +97,7 @@ export default function Island() {
               tool === type ? "bg-[#E0DFFF]" : "hover:bg-zinc-100 text-zinc-600"
             }`}
           >
-            <Icon className="w-[10px] h-[12px]" strokeWidth={1.5}/>
+            <Icon className="w-[10px] h-[12px]" strokeWidth={1.5} />
           </div>
         ))}
       </div>

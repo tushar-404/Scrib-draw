@@ -6,12 +6,14 @@ import Konva from "konva";
 export type Tool =
   | "select"
   | "pan"
+  | "circle"
   | "square"
   | "arrow"
   | "straightline"
   | "draw"
   | "text"
-  | "eraser";
+  | "eraser"
+  | "image";
 export const toolAtom = atom<Tool>("draw");
 
 export interface DrawAction {
@@ -69,13 +71,34 @@ export interface SquareAction {
   fill: string;
   opacity?: number;
 }
-
+export interface CircleAction {
+  id: string;
+  tool: "circle";
+  x: number;
+  y: number;
+  radius: number;
+  stroke: string;
+  strokeWidth: number;
+  fill: string;
+  opacity: number;
+}
+export interface ImageAction {
+  id: string;
+  tool: "image";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  src: string;
+}
 export type Action =
   | DrawAction
   | TextAction
   | ArrowAction
   | StraightLineAction
-  | SquareAction;
+  | SquareAction
+  | CircleAction
+  | ImageAction;
 
 export const actionsAtom = atomWithStorage<Action[]>("willshare", []);
 export const selectedIdsAtom = atom<string[]>([]);
@@ -110,7 +133,14 @@ export const recordActionAtom = atom(
     set(historyStepAtom, history.length - 1);
     set(actionsAtom, newActions);
 
-    const creationTools: Tool[] = ["text", "arrow", "straightline", "square"];
+    const creationTools: Tool[] = [
+      "text",
+      "arrow",
+      "straightline",
+      "square",
+      "circle",
+      "image",
+    ];
     const currentTool = get(toolAtom);
 
     if (
@@ -127,7 +157,6 @@ export const recordActionAtom = atom(
     }
   },
 );
-
 
 export const undoAtom = atom(null, (get, set) => {
   if (get(historyControlsAtom).canUndo) {
@@ -172,7 +201,6 @@ export const ColorAtom = atom<IColor>({
   hex: "#000000",
   rgb: { r: 0, g: 0, b: 0 },
   hsv: { h: 0, s: 0, v: 0 },
-
 });
 
 export const FillAtom = atom<IColor>({
@@ -180,7 +208,6 @@ export const FillAtom = atom<IColor>({
   rgb: { r: 236, g: 199, b: 95 },
   hsv: { h: 45, s: 60, v: 93 },
 });
-
 
 export const opacityatom = atom<number>(1);
 export const FillboolAtom = atom<boolean>(false);
