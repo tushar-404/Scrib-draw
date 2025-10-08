@@ -11,10 +11,10 @@ import {
   Transformer,
   Rect,
   Circle,
-  Image as KonvaImage, // NEW: Import Konva's Image component
+  Image as KonvaImage,
 } from "react-konva";
 import Konva from "konva";
-import useImage from "use-image"; // NEW: Import the useImage hook for loading
+import useImage from "use-image";
 
 // Tool Handlers
 import HandleDraw from "./Tools/HandleDraw";
@@ -25,15 +25,14 @@ import HandleSelect from "./Tools/HandleSelect";
 import HandleSquare from "./Tools/HandleSquare";
 import HandleCircle from "./Tools/HandleCircle";
 import HandleEraser from "./Tools/HandleEraser";
-import HandleImage from "./Tools/HandleImage"; // NEW: Import the image handler
+import HandleImage from "./Tools/HandleImage";
 
-// Jotai Store Atoms and Types
 import {
   actionsAtom,
   Action,
   ArrowAction,
   CircleAction,
-  ImageAction, // NEW: Import the ImageAction type
+  ImageAction,
   TextAction,
   toolAtom,
   StageSizeAtom,
@@ -48,7 +47,6 @@ import {
   FillboolAtom,
 } from "./store";
 
-// NEW: A dedicated component to handle asynchronous image loading.
 const URLImage = ({ shape, isSelected, onDragEnd, onTransformEnd }: any) => {
   const [img] = useImage(shape.src);
   return (
@@ -174,7 +172,7 @@ export default function StageComponent() {
           opacityy,
         );
         break;
-      // NEW: Activate the image handler when the tool is selected.
+
       case "image":
         cleanup = HandleImage(stageRef.current, recordAction);
         break;
@@ -235,19 +233,19 @@ export default function StageComponent() {
       style={{
         width: "100vw",
         height: "100vh",
-        // NEW: Add a cursor style for the image tool.
+
         cursor:
           tool === "image"
             ? "pointer"
             : tool === "draw"
-            ? "crosshair"
-            : tool === "pan"
-            ? "grab"
-            : tool === "eraser"
-            ? `url('data:image/svg+xml;utf8,${encodeURIComponent(
-                `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40"><rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5" rx="7" ry="4" transform="rotate(-45 30 20)"/></svg>`,
-              )}') 30 20, auto`
-            : "default",
+              ? "crosshair"
+              : tool === "pan"
+                ? "grab"
+                : tool === "eraser"
+                  ? `url('data:image/svg+xml;utf8,${encodeURIComponent(
+                      `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40"><rect x="5" y="5" width="23" height="15" fill="white" stroke="black" stroke-width="1.5" rx="7" ry="4" transform="rotate(-45 30 20)"/></svg>`,
+                    )}') 30 20, auto`
+                  : "default",
       }}
     >
       <Stage
@@ -264,17 +262,117 @@ export default function StageComponent() {
             switch (action.tool) {
               case "draw":
               case "straightline":
-                return <Line key={i} {...action} id={action.id} points={action.points} stroke={action.stroke} strokeWidth={action.strokeWidth} tension={0.5} lineCap="round" lineJoin="round" x={(action as any).x || 0} y={(action as any).y || 0} draggable={isSelected && tool === "select"} hitStrokeWidth={isSelected ? 100 : 10} onDragEnd={(e) => updateAction(i, { x: e.target.x(), y: e.target.y() })} />;
+                return (
+                  <Line
+                    key={i}
+                    {...action}
+                    id={action.id}
+                    points={action.points}
+                    stroke={action.stroke}
+                    strokeWidth={action.strokeWidth}
+                    tension={0.5}
+                    lineCap="round"
+                    lineJoin="round"
+                    x={(action as any).x || 0}
+                    y={(action as any).y || 0}
+                    draggable={isSelected && tool === "select"}
+                    hitStrokeWidth={isSelected ? 100 : 10}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                  />
+                );
               case "arrow":
                 const arrow = action as ArrowAction;
-                return <Arrow key={i} {...arrow} id={action.id} points={arrow.points} stroke={arrow.stroke} strokeWidth={arrow.strokeWidth} pointerLength={arrow.pointerLength || 20} pointerWidth={arrow.pointerWidth || 20} fill={arrow.fill || arrow.stroke} lineCap="round" lineJoin="round" x={(arrow as any).x || 0} y={(arrow as any).y || 0} draggable={isSelected && tool === "select"} hitStrokeWidth={isSelected ? 100 : 10} onDragEnd={(e) => updateAction(i, { x: e.target.x(), y: e.target.y() })} />;
+                return (
+                  <Arrow
+                    key={i}
+                    {...arrow}
+                    id={action.id}
+                    points={arrow.points}
+                    stroke={arrow.stroke}
+                    strokeWidth={arrow.strokeWidth}
+                    pointerLength={arrow.pointerLength || 20}
+                    pointerWidth={arrow.pointerWidth || 20}
+                    fill={arrow.fill || arrow.stroke}
+                    lineCap="round"
+                    lineJoin="round"
+                    x={(arrow as any).x || 0}
+                    y={(arrow as any).y || 0}
+                    draggable={isSelected && tool === "select"}
+                    hitStrokeWidth={isSelected ? 100 : 10}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                  />
+                );
               case "square":
-                return <Rect key={i} {...action} id={action.id} x={action.x} y={action.y} width={action.width} height={action.height} cornerRadius={10} stroke={action.stroke} strokeWidth={action.strokeWidth} fill={action.fill} opacity={action.opacity} draggable={isSelected && tool === "select"} onDragEnd={(e) => updateAction(i, { x: e.target.x(), y: e.target.y() })} onTransformEnd={(e) => { const node = e.target as Konva.Rect; const scaleX = node.scaleX(); const scaleY = node.scaleY(); node.scaleX(1); node.scaleY(1); updateAction(i, { x: node.x(), y: node.y(), width: Math.max(1, node.width() * scaleX), height: Math.max(1, node.height() * scaleY) }); }} />;
+                return (
+                  <Rect
+                    key={i}
+                    {...action}
+                    id={action.id}
+                    x={action.x}
+                    y={action.y}
+                    width={action.width}
+                    height={action.height}
+                    cornerRadius={10}
+                    stroke={action.stroke}
+                    strokeWidth={action.strokeWidth}
+                    fill={action.fill}
+                    opacity={action.opacity}
+                    draggable={isSelected && tool === "select"}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                    onTransformEnd={(e) => {
+                      const node = e.target as Konva.Rect;
+                      const scaleX = node.scaleX();
+                      const scaleY = node.scaleY();
+                      node.scaleX(1);
+                      node.scaleY(1);
+                      updateAction(i, {
+                        x: node.x(),
+                        y: node.y(),
+                        width: Math.max(1, node.width() * scaleX),
+                        height: Math.max(1, node.height() * scaleY),
+                      });
+                    }}
+                  />
+                );
               case "circle":
                 const circleAction = action as CircleAction;
-                return <Circle key={i} {...circleAction} id={circleAction.id} x={circleAction.x} y={circleAction.y} radius={circleAction.radius} stroke={circleAction.stroke} strokeWidth={circleAction.strokeWidth} fill={circleAction.fill} opacity={circleAction.opacity} draggable={isSelected && tool === "select"} onDragEnd={(e) => updateAction(i, { x: e.target.x(), y: e.target.y() })} onTransformEnd={(e) => { const node = e.target as Konva.Circle; const scaleX = node.scaleX(); node.scaleX(1); node.scaleY(1); updateAction(i, { x: node.x(), y: node.y(), radius: Math.max(1, node.radius() * scaleX) }); }} />;
+                return (
+                  <Circle
+                    key={i}
+                    {...circleAction}
+                    id={circleAction.id}
+                    x={circleAction.x}
+                    y={circleAction.y}
+                    radius={circleAction.radius}
+                    stroke={circleAction.stroke}
+                    strokeWidth={circleAction.strokeWidth}
+                    fill={circleAction.fill}
+                    opacity={circleAction.opacity}
+                    draggable={isSelected && tool === "select"}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                    onTransformEnd={(e) => {
+                      const node = e.target as Konva.Circle;
+                      const scaleX = node.scaleX();
+                      node.scaleX(1);
+                      node.scaleY(1);
+                      updateAction(i, {
+                        x: node.x(),
+                        y: node.y(),
+                        radius: Math.max(1, node.radius() * scaleX),
+                      });
+                    }}
+                  />
+                );
 
-              // NEW: Render the URLImage component for image actions.
+            
               case "image":
                 const imageAction = action as ImageAction;
                 return (
@@ -303,7 +401,24 @@ export default function StageComponent() {
 
               case "text":
                 const textAction = action as TextAction;
-                return <Text key={i} {...textAction} id={action.id} x={textAction.x} y={textAction.y} text={textAction.text} fontSize={textAction.fontSize} fill={textAction.fill} fontFamily="Courier New" hitStrokeWidth={isSelected ? 30 : 10} draggable={isSelected && tool === "select"} onDragEnd={(e) => updateAction(i, { x: e.target.x(), y: e.target.y() })} />;
+                return (
+                  <Text
+                    key={i}
+                    {...textAction}
+                    id={action.id}
+                    x={textAction.x}
+                    y={textAction.y}
+                    text={textAction.text}
+                    fontSize={textAction.fontSize}
+                    fill={textAction.fill}
+                    fontFamily="Courier New"
+                    hitStrokeWidth={isSelected ? 30 : 10}
+                    draggable={isSelected && tool === "select"}
+                    onDragEnd={(e) =>
+                      updateAction(i, { x: e.target.x(), y: e.target.y() })
+                    }
+                  />
+                );
               default:
                 return null;
             }

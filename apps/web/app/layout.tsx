@@ -1,5 +1,6 @@
 import CharacteristicsIsland from "./components/Canvas/Characteristics";
 import Island from "./components/Canvas/Island";
+import WSActionSender from "./components/Collaboration";
 import "./globals.css";
 
 export default function RootLayout({
@@ -10,20 +11,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-          <div
+        <div
           style={{
             position: "fixed",
             top: 0,
             left: 0,
             width: "100%",
             zIndex: 9999,
-            pointerEvents: "auto", 
+            pointerEvents: "auto",
           }}
         >
-        <Island />
-        <CharacteristicsIsland/>
+          <Island />
+          <CharacteristicsIsland />
+          <WSActionSender/>
         </div>
-          
+
         {children}
       </body>
     </html>

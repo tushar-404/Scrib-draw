@@ -1,13 +1,21 @@
-import { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from "ws";
 
 const wss = new WebSocketServer({ port: 8080 });
 
-wss.on('connection', function connection(ws) {
-  ws.on('error', console.error);
+wss.on("listening", () => {
+  console.log(`server is live at ws://localhost:8080`);
+});
 
-  ws.on('message', function message(data) {
-    console.log('received: %s', data);
+wss.on(`connection`, (ws) => {
+  ws.on(`error`, console.error);
+  ws.on(`message`, (e) => {
+    wss.clients.forEach((client) => {
+      if (client.readyState === ws.OPEN) {
+        client.send(e.toString());
+      }
+    });
   });
-
-  ws.send('something');
+  ws.on(`close`, () => {
+    console.log(`user Disconnected`);
+  });
 });

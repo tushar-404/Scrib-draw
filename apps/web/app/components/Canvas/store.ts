@@ -99,7 +99,7 @@ export type Action =
   | SquareAction
   | CircleAction
   | ImageAction;
-
+export const livePreviewAtom = atom<Action | null>(null);
 export const actionsAtom = atomWithStorage<Action[]>("willshare", []);
 export const selectedIdsAtom = atom<string[]>([]);
 
