@@ -169,10 +169,11 @@ export default function Island() {
                 Collaborative Drawing
               </h4>
               <p className="mb-2 text-[10px]">
-                Real-time collaborative drawing workspace
-                <br />
-                Share ideas, sketch, and work together.
-                <br />
+                ScribDraw Real-time collaborative drawing workspace
+                <br/>
+                Have Fun sharing your ideas,work :)
+                
+                <br/>
                 <em className="text-zinc-400">
                   Live cursor sync coming soon...
                 </em>
