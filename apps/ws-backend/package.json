@@ -12,16 +12,19 @@
     "dev": "npm run build &&npm run start"
   },
   "dependencies": {
+    "@types/uuid": "^11.0.0",
     "@types/ws": "^8.18.1",
     "cookie-parser": "^1.4.7",
     "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.1.6",
+    "uuid": "^13.0.0",
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@repo/backend-common": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/cookie-parser": "^1.4.9",
     "@types/jsonwebtoken": "^9.0.10",
-    "dotenv": "^17.2.2",
-    "@repo/backend-common": "workspace:*"
+    "dotenv": "^17.2.2"
   }
 }

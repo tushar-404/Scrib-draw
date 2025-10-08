@@ -98,9 +98,14 @@ export type Action =
   | StraightLineAction
   | SquareAction
   | CircleAction
-  | ImageAction;
-export const livePreviewAtom = atom<Action | null>(null);
+  | ImageAction
+  | object; 
+
 export const actionsAtom = atomWithStorage<Action[]>("willshare", []);
+
+export const LiveActionAtom = atom<Action[]>([]);
+export const LiveStatusAtom = atom<boolean>(false);
+
 export const selectedIdsAtom = atom<string[]>([]);
 
 const historyAtom = atom<string[]>([JSON.stringify([])]);

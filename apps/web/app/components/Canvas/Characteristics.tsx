@@ -160,7 +160,7 @@ export default function CharacteristicsIsland() {
                 step={0.05}
                 value={opacity}
                 onChange={(e) => setOpacity(Number(e.target.value))}
-                disabled={!fillenabled}
+              
                 className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-blue-600 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>

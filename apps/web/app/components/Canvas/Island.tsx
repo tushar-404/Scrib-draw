@@ -1,5 +1,3 @@
-// Island.tsx
-
 "use client";
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
@@ -11,6 +9,7 @@ import {
   redoAtom,
   resetAtom,
   historyControlsAtom,
+  actionsAtom,
 } from "./store";
 import {
   Eraser,
@@ -27,22 +26,29 @@ import {
   Redo2,
   Circle,
   Image,
+  Info,
+  Github,
+  Globe,
 } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function Island() {
   const [tool, setTool] = useAtom(toolAtom);
   const [stage, setStage] = useAtom(StageAtom);
-
-  // Get setters for our actions
+  const resetCanvas = useSetAtom(resetAtom);
+  const [, setAction] = useAtom(actionsAtom);
   const undo = useSetAtom(undoAtom);
   const redo = useSetAtom(redoAtom);
-  const resetCanvas = useSetAtom(resetAtom);
-
-  // Get undo/redo availability state
   const { canUndo, canRedo } = useAtomValue(historyControlsAtom);
 
-  // Keyboard shortcuts for undo/redo
+  const [isInfoOpen, setInfoOpen] = useState(false);
+
+  function handleReset() {
+    setAction([]);
+    resetCanvas();
+  }
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -104,7 +110,6 @@ export default function Island() {
 
       {/* Bottom-left controls */}
       <div className="fixed bottom-4 left-4 flex items-center gap-2 z-50 bg-white p-[2px] rounded-lg shadow border-[1px] border-transparent">
-        {/* Undo */}
         <div
           onClick={canUndo ? undo : undefined}
           className={`${baseButtonClass} ${!canUndo && disabledButtonClass}`}
@@ -112,8 +117,6 @@ export default function Island() {
         >
           <Undo2 className="w-[10px] h-[10px]" />
         </div>
-
-        {/* Redo */}
         <div
           onClick={canRedo ? redo : undefined}
           className={`${baseButtonClass} ${!canRedo && disabledButtonClass}`}
@@ -123,7 +126,7 @@ export default function Island() {
         </div>
 
         <span className="border-l border-zinc-300 h-6"></span>
-        {/* Recenter */}
+
         <div
           onClick={handleRecenter}
           className={baseButtonClass}
@@ -134,14 +137,75 @@ export default function Island() {
 
         <span className="border-l border-zinc-300 h-6"></span>
 
-        {/* Reset */}
         <div
-          onClick={resetCanvas}
+          onClick={handleReset}
           title="Reset Canvas"
           className={baseButtonClass}
         >
           <Trash2 className="w-[10px] h-[10px]" />
         </div>
+      </div>
+
+      {/* Bottom-right info button */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <button
+          onClick={() => setInfoOpen(!isInfoOpen)}
+          className="cursor-pointer flex items-center justify-center p-2 rounded-md border-[1px] border-transparent hover:bg-zinc-100 text-zinc-600 shadow bg-white"
+          title="About this app"
+        >
+          <Info className="w-[12px] h-[12px]" />
+        </button>
+
+        <AnimatePresence>
+          {isInfoOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-10 right-0 w-64 bg-white rounded-lg shadow border border-zinc-200 p-4 text-xs text-zinc-700 font-[var(--font-minefont)]"
+            >
+              <h4 className="font-semibold mb-2 text-sm">
+                Collaborative Drawing
+              </h4>
+              <p className="mb-2 text-[10px]">
+                Real-time collaborative drawing workspace
+                <br />
+                Share ideas, sketch, and work together.
+                <br />
+                <em className="text-zinc-400">
+                  Live cursor sync coming soon...
+                </em>
+              </p>
+
+              <p className="mb-2 flex items-center gap-2 text-[10px]">
+                <Github className="w-3 h-3" />
+                <a
+                  href="https://github.com/dotbillu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  GitHub
+                </a>
+                <span className="text-black">·</span>
+                <Globe className="w-3 h-3" />
+                <a
+                  href="https://dotbillu.github.io/Portfoliohtml/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  Portfolio
+                </a>
+              </p>
+
+              <p className="text-[9px] text-zinc-500">
+                &copy; 2025 dotbillu — MIT License
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );
