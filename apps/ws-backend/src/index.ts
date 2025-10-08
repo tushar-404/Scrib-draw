@@ -3,11 +3,11 @@ import { parse } from "url";
 import type { IncomingMessage } from "http";
 
 const rooms = new Map<string, Set<WebSocket>>();
-
-const wss = new WebSocketServer({ port: 8080 });
+const PORT = Number(process.env.PORT) || 8080;
+const wss = new WebSocketServer({ port: PORT });
 
 wss.on("listening", () => {
-  console.log(`WebSocket server is live at ws://localhost:8080`);
+  console.log(`Server is listening on port ${PORT}`);
 });
 
 function broadcastUserCount(roomId: string, newClient?: WebSocket) {

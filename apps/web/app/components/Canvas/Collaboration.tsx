@@ -1,17 +1,14 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { actionsAtom, EmptyAction } from "./Canvas/store";
+import { actionsAtom,EmptyAction } from "./store"; 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Blend, Copy, Check, LogOut, Plus, LogIn, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { nanoid } from "nanoid";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
 
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+
+
 
 export default function CollaborationManager() {
   const [actions, setActions] = useAtom(actionsAtom);
@@ -24,14 +21,15 @@ export default function CollaborationManager() {
 
   const wsRef = useRef<WebSocket | null>(null);
   const isLocalChange = useRef(true);
+  const wsBase = process.env.NEXT_PUBLIC_WS_BASE;
 
   const connect = useCallback(
     (id: string) => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.close();
       }
+      const ws = new WebSocket(`${wsBase}?roomId=${id}`);
 
-      const ws = new WebSocket(`ws://localhost:8080?roomId=${id}`);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -70,7 +68,7 @@ export default function CollaborationManager() {
                 };
                 setActions((prev) => [...prev, newEmptyAction]);
               };
-              addEmptyAction()
+              addEmptyAction();
             }
           } else if (Array.isArray(parsed)) {
             isLocalChange.current = false;
