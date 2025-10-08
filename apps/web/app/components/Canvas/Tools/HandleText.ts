@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { nanoid } from "nanoid";
 import { Action, TextAction } from "../store";
+import { Layer } from "konva/lib/Layer";
 
 const HandleText = (
   stage: Konva.Stage,
@@ -67,21 +68,20 @@ const HandleText = (
       fontSize: fontSize,
       fontFamily: "Courier New",
     });
-    layer.add(currentTextNode);
+    (layer as Layer).add(currentTextNode);
 
     cursor = new Konva.Line({
       points: [pos.x, pos.y, pos.x, pos.y + fontSize],
       stroke: color,
       strokeWidth: 1,
     });
-    layer.add(cursor);
+    (layer as Layer).add(cursor);
 
     blinkingInterval = setInterval(() => {
       cursor?.visible(!cursor.visible());
     }, 500);
   };
 
- 
   const handleKeyDown = async (evt: KeyboardEvent) => {
     if (!isEditing || !currentTextNode) return;
 
@@ -100,7 +100,6 @@ const HandleText = (
       return;
     }
 
-    
     if ((evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === "v") {
       try {
         const pastedText = await navigator.clipboard.readText();
@@ -117,13 +116,11 @@ const HandleText = (
       currentTextNode.text(currentTextNode.text() + evt.key);
     }
 
-   
     if (cursor) {
       const newX = currentTextNode.x() + currentTextNode.width();
       const newY = currentTextNode.y();
       cursor.points([newX, newY, newX, newY + currentTextNode.fontSize()]);
 
-  
       cursor.visible(true);
       if (blinkingInterval) clearInterval(blinkingInterval);
       blinkingInterval = setInterval(() => {

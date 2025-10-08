@@ -13,12 +13,13 @@ export type Tool =
   | "draw"
   | "text"
   | "eraser"
-  | "image";
+  | "image"
+  | "empty";
 export const toolAtom = atom<Tool>("draw");
 
 export interface DrawAction {
-  id?: string;
-  tool: Tool;
+  id: string;
+  tool: "draw";
   points: number[];
   stroke: string;
   strokeWidth?: number;
@@ -27,7 +28,7 @@ export interface DrawAction {
 }
 
 export interface TextAction {
-  id?: string;
+  id: string;
   tool: "text";
   x: number;
   y: number;
@@ -37,7 +38,7 @@ export interface TextAction {
 }
 
 export interface ArrowAction {
-  id?: string;
+  id: string;
   tool: "arrow";
   stroke: string;
   points: [number, number, number, number];
@@ -50,7 +51,7 @@ export interface ArrowAction {
 }
 
 export interface StraightLineAction {
-  id?: string;
+  id: string;
   tool: "straightline";
   points: number[];
   stroke: string;
@@ -60,14 +61,14 @@ export interface StraightLineAction {
 }
 
 export interface SquareAction {
-  id?: string;
+  id: string;
   tool: "square";
   x: number;
   y: number;
   width: number;
   height: number;
   stroke: string;
-  strokeWidth: Width;
+  strokeWidth: number;
   fill: string;
   opacity?: number;
 }
@@ -91,6 +92,10 @@ export interface ImageAction {
   height: number;
   src: string;
 }
+export interface EmptyAction {
+  id: string;
+  tool: "empty";
+}
 export type Action =
   | DrawAction
   | TextAction
@@ -99,7 +104,7 @@ export type Action =
   | SquareAction
   | CircleAction
   | ImageAction
-  | object; 
+  | EmptyAction;
 
 export const actionsAtom = atomWithStorage<Action[]>("willshare", []);
 
@@ -152,12 +157,14 @@ export const recordActionAtom = atom(
       newActions.length > prevActions.length &&
       creationTools.includes(currentTool)
     ) {
-      const newAction = newActions[newActions.length - 1];
 
-      if (newAction.id) {
-        set(selectedIdsAtom, [newAction.id]);
+      const lastIndex = newActions.length - 1;
+      if (lastIndex >= 0) {
+        const newAction = newActions[lastIndex];
+        if (newAction?.id) {
+          set(selectedIdsAtom, [newAction.id]);
+        }
       }
-
       set(toolAtom, "select");
     }
   },
@@ -193,8 +200,7 @@ export const resetAtom = atom(null, (get, set) => {
 export const StageSizeAtom = atom({ width: 0, height: 0 });
 export const StageAtom = atom<Konva.Stage | null>(null);
 
-export type Width = 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
-export const WidthAtom = atom<Width>(2);
+export const WidthAtom = atom<number>(2);
 
 interface IColor {
   hex: string;

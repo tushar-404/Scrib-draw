@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, act } from "react";
 import {
   Stage,
   Layer,
@@ -45,6 +45,10 @@ import {
   recordActionAtom,
   opacityatom,
   FillboolAtom,
+  EmptyAction,
+  SquareAction,
+  StraightLineAction,
+  DrawAction,
 } from "./store";
 
 const URLImage = ({ shape, isSelected, onDragEnd, onTransformEnd }: any) => {
@@ -84,7 +88,30 @@ export default function StageComponent() {
   const updateAction = useCallback(
     (idx: number, updates: Partial<Action>) => {
       recordAction((prev) =>
-        prev.map((a, i) => (i === idx ? { ...a, ...updates } : a)),
+        prev.map((a, i) => {
+          if (i !== idx) return a;
+
+          switch (a.tool) {
+            case "draw":
+              return { ...a, ...(updates as Partial<DrawAction>) };
+            case "text":
+              return { ...a, ...(updates as Partial<TextAction>) };
+            case "arrow":
+              return { ...a, ...(updates as Partial<ArrowAction>) };
+            case "straightline":
+              return { ...a, ...(updates as Partial<StraightLineAction>) };
+            case "square":
+              return { ...a, ...(updates as Partial<SquareAction>) };
+            case "circle":
+              return { ...a, ...(updates as Partial<CircleAction>) };
+            case "image":
+              return { ...a, ...(updates as Partial<ImageAction>) };
+            case "empty":
+              return { ...a, ...(updates as Partial<EmptyAction>) };
+            default:
+              return a;
+          }
+        }),
       );
     },
     [recordAction],
@@ -259,6 +286,7 @@ export default function StageComponent() {
         <Layer>
           {actions.map((action, i) => {
             const isSelected = selectedIds.includes(action.id!);
+
             switch (action.tool) {
               case "draw":
               case "straightline":
@@ -283,22 +311,21 @@ export default function StageComponent() {
                   />
                 );
               case "arrow":
-                const arrow = action as ArrowAction;
                 return (
                   <Arrow
                     key={i}
-                    {...arrow}
+                    {...action}
                     id={action.id}
-                    points={arrow.points}
-                    stroke={arrow.stroke}
-                    strokeWidth={arrow.strokeWidth}
-                    pointerLength={arrow.pointerLength || 20}
-                    pointerWidth={arrow.pointerWidth || 20}
-                    fill={arrow.fill || arrow.stroke}
+                    points={action.points}
+                    stroke={action.stroke}
+                    strokeWidth={action.strokeWidth}
+                    pointerLength={action.pointerLength || 20}
+                    pointerWidth={action.pointerWidth || 20}
+                    fill={action.fill || action.stroke}
                     lineCap="round"
                     lineJoin="round"
-                    x={(arrow as any).x || 0}
-                    y={(arrow as any).y || 0}
+                    x={(action as any).x || 0}
+                    y={(action as any).y || 0}
                     draggable={isSelected && tool === "select"}
                     hitStrokeWidth={isSelected ? 100 : 10}
                     onDragEnd={(e) =>
@@ -341,19 +368,18 @@ export default function StageComponent() {
                   />
                 );
               case "circle":
-                const circleAction = action as CircleAction;
                 return (
                   <Circle
                     key={i}
-                    {...circleAction}
-                    id={circleAction.id}
-                    x={circleAction.x}
-                    y={circleAction.y}
-                    radius={circleAction.radius}
-                    stroke={circleAction.stroke}
-                    strokeWidth={circleAction.strokeWidth}
-                    fill={circleAction.fill}
-                    opacity={circleAction.opacity}
+                    {...action}
+                    id={action.id}
+                    x={action.x}
+                    y={action.y}
+                    radius={action.radius}
+                    stroke={action.stroke}
+                    strokeWidth={action.strokeWidth}
+                    fill={action.fill}
+                    opacity={action.opacity}
                     draggable={isSelected && tool === "select"}
                     onDragEnd={(e) =>
                       updateAction(i, { x: e.target.x(), y: e.target.y() })
@@ -372,13 +398,11 @@ export default function StageComponent() {
                   />
                 );
 
-            
               case "image":
-                const imageAction = action as ImageAction;
                 return (
                   <URLImage
                     key={i}
-                    shape={imageAction}
+                    shape={action}
                     isSelected={isSelected && tool === "select"}
                     onDragEnd={(e: any) =>
                       updateAction(i, { x: e.target.x(), y: e.target.y() })
@@ -400,17 +424,16 @@ export default function StageComponent() {
                 );
 
               case "text":
-                const textAction = action as TextAction;
                 return (
                   <Text
                     key={i}
-                    {...textAction}
+                    {...action}
                     id={action.id}
-                    x={textAction.x}
-                    y={textAction.y}
-                    text={textAction.text}
-                    fontSize={textAction.fontSize}
-                    fill={textAction.fill}
+                    x={action.x}
+                    y={action.y}
+                    text={action.text}
+                    fontSize={action.fontSize}
+                    fill={action.fill}
                     fontFamily="Courier New"
                     hitStrokeWidth={isSelected ? 30 : 10}
                     draggable={isSelected && tool === "select"}

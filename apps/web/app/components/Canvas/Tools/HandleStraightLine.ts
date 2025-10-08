@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { nanoid } from "nanoid";
 import { Action, StraightLineAction } from "../store";
+import { Layer } from "konva/lib/Layer";
 
 const HandleStraightLine = (
   stage: Konva.Stage,
@@ -24,7 +25,7 @@ const HandleStraightLine = (
       lineJoin: "round",
     });
 
-    stage.findOne("Layer")?.add(currentLine);
+    (stage.findOne("Layer") as Layer)?.add(currentLine);
     window.addEventListener("mouseup", handleMouseUp);
     window.addEventListener("touchend", handleMouseUp);
   };
@@ -33,9 +34,8 @@ const HandleStraightLine = (
     if (!isDrawing || !currentLine) return;
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
-
-    const startPoints = currentLine.points();
-    const newPoints = [startPoints[0], startPoints[1], pos.x, pos.y];
+    const startPoints = currentLine.points() ?? [0, 0, 0, 0];
+    const newPoints = [startPoints[0] ?? 0, startPoints[1] ?? 0, pos.x, pos.y];
     currentLine.points(newPoints);
     currentLine.getLayer()?.batchDraw();
   };
@@ -47,8 +47,9 @@ const HandleStraightLine = (
     if (!isDrawing || !currentLine) return;
     isDrawing = false;
 
-    const finalPoints = currentLine.points();
-    const [x1, y1, x2, y2] = finalPoints;
+    const finalPoints = currentLine.points() as number[];
+    const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = finalPoints;
+
     const dx = x2 - x1;
     const dy = y2 - y1;
     const length = Math.sqrt(dx * dx + dy * dy);

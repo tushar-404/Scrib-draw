@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { nanoid } from "nanoid";
 import { Action, ArrowAction } from "../store";
+import { Layer } from "konva/lib/Layer";
 
 const HandleArrow = (
   stage: Konva.Stage,
@@ -21,13 +22,13 @@ const HandleArrow = (
       stroke: color,
       strokeWidth: strokeWidth,
       lineCap: "round",
-      lineJoin : "round",
+      lineJoin: "round",
       fill: color,
       pointerLength: strokeWidth * 4,
       pointerWidth: strokeWidth * 3,
     });
 
-    stage.findOne("Layer")?.add(currentArrow);
+    (stage.findOne("Layer") as Layer)?.add(currentArrow);
     window.addEventListener("mouseup", handleMouseUp);
     window.addEventListener("touchend", handleMouseUp);
   };
@@ -40,9 +41,8 @@ const HandleArrow = (
 
     const startPoints = currentArrow.points();
     const newPoints = [startPoints[0], startPoints[1], pos.x, pos.y];
-    currentArrow.points(newPoints);
+    currentArrow.points(newPoints.filter((n): n is number => n !== undefined));
 
-    // This is the fix: Use batchDraw for better performance
     currentArrow.getLayer()?.batchDraw();
   };
 
@@ -54,9 +54,10 @@ const HandleArrow = (
     isDrawing = false;
 
     const finalPoints = currentArrow.points();
-    const [x1, y1, x2, y2] = finalPoints;
+    const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = finalPoints;
     const dx = x2 - x1;
     const dy = y2 - y1;
+
     const length = Math.sqrt(dx * dx + dy * dy);
 
     if (length < strokeWidth * 4) {

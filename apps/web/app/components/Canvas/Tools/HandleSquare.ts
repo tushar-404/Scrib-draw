@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { nanoid } from "nanoid";
 import { Action, SquareAction } from "../store";
+import { Layer } from "konva/lib/Layer";
 
 const HandleSquare = (
   stage: Konva.Stage,
@@ -34,7 +35,7 @@ const HandleSquare = (
       opacity: opacityValue,
     });
 
-    stage.findOne("Layer")?.add(currentRect);
+    (stage.findOne("Layer") as Layer)?.add(currentRect);
     window.addEventListener("mouseup", handleMouseUp);
     window.addEventListener("touchend", handleMouseUp);
   };
@@ -60,15 +61,16 @@ const HandleSquare = (
   const handleMouseUp = () => {
     window.removeEventListener("mouseup", handleMouseUp);
     window.removeEventListener("touchend", handleMouseUp);
-    
+
     if (!isDrawing || !currentRect) return;
     isDrawing = false;
 
-    const width = currentRect.width();
-    const height = currentRect.height();
+    const rect = currentRect;
+    const width = rect.width();
+    const height = rect.height();
 
     if (width < 5 && height < 5) {
-      currentRect.destroy();
+      rect.destroy();
       currentRect = null;
       return;
     }
@@ -78,8 +80,8 @@ const HandleSquare = (
       {
         id: nanoid(),
         tool: "square",
-        x: currentRect.x(),
-        y: currentRect.y(),
+        x: rect.x(),
+        y: rect.y(),
         width: width,
         height: height,
         stroke: color,
@@ -89,7 +91,7 @@ const HandleSquare = (
       } as SquareAction,
     ]);
 
-    currentRect.destroy();
+    rect.destroy();
     currentRect = null;
   };
 

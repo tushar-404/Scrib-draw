@@ -38,6 +38,7 @@ export default function HandleEraser({ stage, recordAction }: HandleEraserProps)
   };
 
   const handleMouseUp = () => {
+ 
     isErasing = false;
 
     if (deletedIdsInSession.size > 0) {

@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { nanoid } from "nanoid";
 import { Action, CircleAction } from "../store";
+import { Layer } from "konva/lib/Layer";
 
 const HandleCircle = (
   stage: Konva.Stage,
@@ -32,7 +33,7 @@ const HandleCircle = (
       opacity: opacityValue,
     });
 
-    stage.findOne("Layer")?.add(currentCircle);
+   (stage.findOne("Layer") as Layer)?.add(currentCircle);
     window.addEventListener("mouseup", handleMouseUp);
     window.addEventListener("touchend", handleMouseUp);
   };

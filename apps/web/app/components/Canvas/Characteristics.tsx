@@ -8,7 +8,7 @@ import {
   opacityatom,
   FillboolAtom,
 } from "./store";
-import { Palette, Slash } from "lucide-react"; 
+import { Palette, Slash } from "lucide-react";
 
 const STROKE_WIDTHS = [
   { value: 2, size: 3, label: "Fine" },
@@ -57,7 +57,12 @@ export default function CharacteristicsIsland() {
                   type="color"
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   value={colors.hex}
-                  onChange={(e) => setColors({ hex: e.target.value })}
+                  onChange={(e) =>
+                    setColors((prev) => ({
+                      ...prev,
+                      hex: e.target.value,
+                    }))
+                  }
                 />
               </label>
             </div>
@@ -130,7 +135,10 @@ export default function CharacteristicsIsland() {
                     value={fill.hex}
                     onChange={(e) => {
                       setFillenabled(true);
-                      setFill({ hex: e.target.value });
+                      setFill((prev) => ({
+                        ...prev,
+                        hex: e.target.value,
+                      }));
                     }}
                   />
                 </label>
@@ -160,7 +168,6 @@ export default function CharacteristicsIsland() {
                 step={0.05}
                 value={opacity}
                 onChange={(e) => setOpacity(Number(e.target.value))}
-              
                 className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-blue-600 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>

@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
 import { Action } from "../store";
+import { Layer } from "konva/lib/Layer";
 
 const HandleDraw = (
   stage: Konva.Stage,
@@ -25,7 +26,7 @@ const HandleDraw = (
       points: [pos.x, pos.y, pos.x, pos.y],
     });
     
-    stage.findOne("Layer")?.add(currentLine);
+    (stage.findOne("Layer")as Layer)?.add(currentLine);
 
   
     window.addEventListener("mouseup", handleMouseUp);

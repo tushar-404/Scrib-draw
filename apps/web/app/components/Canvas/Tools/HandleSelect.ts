@@ -11,8 +11,14 @@ interface HandleSelectProps {
 
 function haveIntersection(r1: Konva.RectConfig, r2: Konva.RectConfig) {
   if (
-    r1.x === undefined || r1.y === undefined || r1.width === undefined || r1.height === undefined ||
-    r2.x === undefined || r2.y === undefined || r2.width === undefined || r2.height === undefined
+    r1.x === undefined ||
+    r1.y === undefined ||
+    r1.width === undefined ||
+    r1.height === undefined ||
+    r2.x === undefined ||
+    r2.y === undefined ||
+    r2.width === undefined ||
+    r2.height === undefined
   ) {
     return false;
   }
@@ -67,8 +73,8 @@ export default function HandleSelect({
       isSelectingBox = false;
       selectionRect.visible(false);
       selectionLayer.batchDraw();
-      
-      const mainLayer = stage.findOne("Layer");
+
+      const mainLayer = stage.findOne("Layer") as Konva.Layer | null;
       if (!mainLayer) return;
 
       const shapes = mainLayer.children;
@@ -93,7 +99,7 @@ export default function HandleSelect({
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.evt.button !== 0) return;
-    
+
     const pos = stage.getRelativePointerPosition();
     if (!pos) return;
     x1 = pos.x;
@@ -107,7 +113,7 @@ export default function HandleSelect({
       selectionRect.width(0);
       selectionRect.height(0);
       selectionLayer.draw();
-      
+
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
       return;
@@ -115,7 +121,7 @@ export default function HandleSelect({
 
     const shapeId = e.target.id();
     if (!shapeId) return;
-    
+
     const isShiftPressed = e.evt.shiftKey;
     const isAlreadySelected = selectedIds.includes(shapeId);
 
