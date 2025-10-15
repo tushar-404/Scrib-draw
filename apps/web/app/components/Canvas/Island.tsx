@@ -182,7 +182,7 @@ export default function Island() {
               <p className="mb-2 flex items-center gap-2 text-[10px]">
                 <Github className="w-3 h-3" />
                 <a
-                  href="https://github.com/dotbillu"
+                  href="https://github.com/tushar-404"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
@@ -191,18 +191,11 @@ export default function Island() {
                 </a>
                 <span className="text-black">·</span>
                 <Globe className="w-3 h-3" />
-                <a
-                  href="https://dotbillu.github.io/Portfoliohtml/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  Portfolio
-                </a>
+               
               </p>
 
               <p className="text-[9px] text-zinc-500">
-                &copy; 2025 dotbillu — MIT License
+                &copy; 2025 tushar-404 — MIT License
               </p>
             </motion.div>
           )}
